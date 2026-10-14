@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=${job.jobNumber}, active='jobs', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="invoice=${card.invoice}">
+    <a th:replace="~{fragments/components :: backLink('/jobs', ${currentUser.mechanic ? 'Back to my jobs' : 'Back to service jobs'})}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><span th:text="${job.jobNumber}">JC-000001</span>
+                <span th:replace="~{fragments/components :: badge(${job.status})}"></span></h1>
+            <p class="page-subtitle">
+                <a th:href="@{/vehicles/{id}(id=${job.vehicle.id})}" th:if="${currentUser.staff}" th:text="${job.vehicle.registrationNumber}">MH12AB1234</a>
+                <span th:unless="${currentUser.staff}" th:text="${job.vehicle.registrationNumber}">MH12AB1234</span>
+                · <span th:text="${job.vehicle.manufacturer + ' ' + job.vehicle.model}">Maker Model</span>
+                · <span th:text="${job.serviceItem.name}">Service</span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <form th:each="action : ${card.actions}" th:action="@{/jobs/{id}/status(id=${job.id})}" method="post"
+                  th:attr="data-confirm=${action.confirm}, data-confirm-title=${action.label}, data-confirm-label=${action.label},
+                           data-confirm-variant=${action.variant.startsWith('outline-') ? action.variant.substring(8) : action.variant}">
+                <input type="hidden" name="target" th:value="${action.target}">
+                <button type="submit" class="btn" th:classappend="${'btn-' + action.variant}" th:disabled="${!action.enabled}"
+                        th:title="${action.disabledReason}">
+                    <i class="bi me-1" th:classappend="${action.icon}" aria-hidden="true"></i><span th:text="${action.label}">Action</span></button>
+            </form>
+            <a class="btn btn-primary" th:if="${card.canInvoice}" th:href="@{/invoices/new(jobId=${job.id})}">
+                <i class="bi bi-receipt me-1" aria-hidden="true"></i>Generate invoice</a>
+            <a class="btn btn-outline-primary" th:if="${invoice != null and currentUser.staff}" th:href="@{/invoices/{id}(id=${invoice.id})}">
+                <i class="bi bi-receipt me-1" aria-hidden="true"></i>Invoice <span th:text="${invoice.invoiceNumber}">INV-000001</span></a>
+            <a class="btn btn-outline-secondary" th:if="${card.canEditDetails}" th:href="@{/jobs/{id}/edit(id=${job.id})}">
+                <i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit details</a>
+        </div>
+    </div>
+
+    <!-- Progress -->
+    <section class="panel mb-4" th:if="${job.status.name() != 'CANCELLED'}">
+        <div class="panel-body">
+            <ol class="job-steps" aria-label="Job progress">
+                <li class="job-step" th:each="s : ${steps}"
+                    th:with="idx=${s.stepIndex}, cur=${job.status.stepIndex}"
+                    th:classappend="${idx < cur or job.status.name() == 'DELIVERED'} ? 'done' : (${idx == cur} ? (${job.status.name() == 'ON_HOLD'} ? 'current hold' : 'current') : '')"
+                    th:attr="aria-current=${idx == cur} ? 'step' : null">
+                    <span th:text="${s.label}">Step</span>
+                </li>
+            </ol>
+            <p class="mt-3 mb-0 text-center" th:if="${job.status.name() == 'ON_HOLD'}">
+                <span class="status-badge status-on-hold">Work is on hold</span> Resume it when the mechanic can continue.</p>
+        </div>
+    </section>
+    <div class="alert alert-warning" role="status" th:if="${job.status.name() == 'CANCELLED'}">
+        <i class="bi bi-slash-circle-fill" aria-hidden="true"></i>
+        <div class="alert-text">This job card was cancelled. Any spare parts that had been recorded were returned to stock.</div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <!-- Complaint and notes -->
+            <section class="panel" id="notes">
+                <div class="panel-header"><h2 class="panel-title">Complaint and diagnosis</h2></div>
+                <div class="panel-body">
+                    <p class="form-label mb-1">Customer complaint</p>
+                    <p th:text="${job.customerComplaint}">Complaint</p>
+
+                    <form th:if="${card.canWork}" th:action="@{/jobs/{id}/notes(id=${job.id})}" method="post">
+                        <div class="mb-3">
+                            <label for="diagnosis" class="form-label">Diagnosis</label>
+                            <textarea class="form-control" id="diagnosis" name="diagnosis" rows="3" maxlength="2000"
+                                      th:text="${job.diagnosis}"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="repairNotes" class="form-label">Repair notes</label>
+                            <textarea class="form-control" id="repairNotes" name="repairNotes" rows="3" maxlength="2000"
+                                      th:text="${job.repairNotes}"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-journal-check me-1" aria-hidden="true"></i>Save notes</button>
+                    </form>
+                    <th:block th:unless="${card.canWork}">
+                        <p class="form-label mb-1">Diagnosis</p>
+                        <p th:if="${job.diagnosis}" th:text="${job.diagnosis}" style="white-space: pre-line">Diagnosis</p>
+                        <p th:unless="${job.diagnosis}" class="text-muted">No diagnosis recorded.</p>
+                        <p class="form-label mb-1">Repair notes</p>
+                        <p th:if="${job.repairNotes}" th:text="${job.repairNotes}" class="mb-0" style="white-space: pre-line">Notes</p>
+                        <p th:unless="${job.repairNotes}" class="text-muted mb-0">No repair notes recorded.</p>
+                    </th:block>
+                </div>
+            </section>
+
+            <!-- Tasks -->
+            <section class="panel" id="tasks">
+                <div class="panel-header">
+                    <h2 class="panel-title">Service tasks</h2>
+                    <span class="text-muted small" th:unless="${#lists.isEmpty(job.tasks)}"
+                          th:text="${job.completedTaskCount + ' of ' + #lists.size(job.tasks) + ' done'}">1 of 3 done</span>
+                </div>
+                <div class="panel-body">
+                    <ul class="task-list" th:unless="${#lists.isEmpty(job.tasks)}">
+                        <li class="task-item" th:each="t : ${job.tasks}" th:classappend="${t.completed} ? 'done'">
+                            <form th:if="${card.canWork}" th:action="@{/jobs/{id}/tasks/{taskId}/toggle(id=${job.id}, taskId=${t.id})}" method="post">
+                                <button type="submit" class="btn btn-outline-secondary btn-row" th:aria-pressed="${t.completed}"
+                                        th:title="${t.completed ? 'Mark as not done' : 'Mark as done'}"
+                                        th:attr="aria-label=${(t.completed ? 'Mark as not done: ' : 'Mark as done: ') + t.description}">
+                                    <i class="bi" th:classappend="${t.completed} ? 'bi-check-square-fill' : 'bi-square'" aria-hidden="true"></i></button>
+                            </form>
+                            <i th:unless="${card.canWork}" class="bi" th:classappend="${t.completed} ? 'bi-check-square-fill' : 'bi-square'" aria-hidden="true"></i>
+                            <span class="task-text" th:text="${t.description}">Task</span>
+                            <form th:if="${card.canWork}" th:action="@{/jobs/{id}/tasks/{taskId}/delete(id=${job.id}, taskId=${t.id})}" method="post">
+                                <button type="submit" class="btn btn-outline-danger btn-row" title="Remove task"
+                                        th:attr="aria-label=${'Remove task: ' + t.description}"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                            </form>
+                        </li>
+                    </ul>
+                    <p class="text-muted" th:if="${#lists.isEmpty(job.tasks)}">No tasks yet.</p>
+
+                    <form th:if="${card.canWork}" th:action="@{/jobs/{id}/tasks(id=${job.id})}" method="post" class="inline-form mt-3">
+                        <div class="flex-grow-1">
+                            <label for="taskDescription" class="visually-hidden">New task</label>
+                            <input type="text" class="form-control" id="taskDescription" name="description" required maxlength="200"
+                                   placeholder="e.g. Replace engine oil and oil filter" autocomplete="off">
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add task</button>
+                    </form>
+                </div>
+            </section>
+
+            <!-- Parts -->
+            <section class="panel" id="parts">
+                <div class="panel-header"><h2 class="panel-title">Spare parts used</h2></div>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(job.partUsages)}">
+                    <table class="table table-vsms">
+                        <caption class="visually-hidden">Spare parts used on this job</caption>
+                        <thead>
+                        <tr>
+                            <th scope="col">Part</th>
+                            <th scope="col" class="num">Qty</th>
+                            <th scope="col" class="num">Unit price</th>
+                            <th scope="col" class="num">Line total</th>
+                            <th scope="col" class="col-actions" th:if="${card.canWork}"><span class="visually-hidden">Actions</span></th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="u : ${job.partUsages}" th:classappend="${!u.stockDeducted} ? 'row-muted'">
+                            <td><span class="cell-primary" th:text="${u.sparePart.name}">Part</span>
+                                <span class="cell-sub" th:text="${u.sparePart.sku + (u.stockDeducted ? '' : ' · returned to stock')}">SKU</span></td>
+                            <td class="num" th:text="${u.quantity}">1</td>
+                            <td class="num" th:text="${@fmt.money(u.unitPriceAtUse)}">₹100.00</td>
+                            <td class="num" th:text="${@fmt.money(u.lineTotal)}">₹100.00</td>
+                            <td class="col-actions" th:if="${card.canWork}">
+                                <form th:action="@{/jobs/{id}/parts/{usageId}/delete(id=${job.id}, usageId=${u.id})}" method="post"
+                                      th:attr="data-confirm=${'Remove ' + u.quantity + ' x ' + u.sparePart.name + ' from this job? The quantity goes back into stock.'}"
+                                      data-confirm-title="Remove part" data-confirm-label="Remove">
+                                    <button type="submit" class="btn btn-outline-danger btn-row" title="Remove part"
+                                            th:attr="aria-label=${'Remove ' + u.sparePart.name}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        </tbody>
+                        <tfoot>
+                        <tr>
+                            <td colspan="3">Parts total</td>
+                            <td class="num" th:text="${@fmt.money(job.partsTotal)}">₹0.00</td>
+                            <td th:if="${card.canWork}"></td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <th:block th:if="${#lists.isEmpty(job.partUsages)}"><div th:replace="~{fragments/components :: emptyState('bi-boxes', 'No parts used yet', null)}"></div></th:block>
+
+                <div class="panel-footer d-block" th:if="${card.canWork}">
+                    <form th:action="@{/jobs/{id}/parts(id=${job.id})}" method="post" class="inline-form">
+                        <div class="flex-grow-1" style="min-width: 14rem">
+                            <label for="sparePartId" class="form-label mb-1">Add a spare part</label>
+                            <select class="form-select" id="sparePartId" name="sparePartId" required>
+                                <option value="">Choose a part…</option>
+                                <option th:each="p : ${partOptions}" th:value="${p.id}" th:disabled="${p.outOfStock}"
+                                        th:text="${p.sku + ' · ' + p.name + ' (' + p.stockQuantity + ' in stock, ' + @fmt.money(p.unitPrice) + ')'}">Part</option>
+                            </select>
+                        </div>
+                        <div style="width: 7rem">
+                            <label for="partQuantity" class="form-label mb-1">Quantity</label>
+                            <input type="number" class="form-control" id="partQuantity" name="quantity" value="1" min="1" max="1000" required inputmode="numeric">
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add part</button>
+                    </form>
+                    <p class="form-text mt-2 mb-0">Stock is reduced as soon as a part is added, and the current unit price is kept on this job.</p>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-lg-4">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Mechanic</h2></div>
+                <div class="panel-body">
+                    <p class="mb-2" th:if="${job.mechanic}">
+                        <i class="bi bi-person-gear me-1" aria-hidden="true"></i><strong th:text="${job.mechanic.name}">Mechanic</strong>
+                        <span class="cell-sub" th:text="${job.mechanic.specialization}">Specialization</span></p>
+                    <p class="text-muted" th:unless="${job.mechanic}">No mechanic assigned yet.</p>
+
+                    <form th:if="${card.canAssign}" th:action="@{/jobs/{id}/assign(id=${job.id})}" method="post">
+                        <label for="assignMechanic" class="form-label" th:text="${job.mechanic == null ? 'Assign a mechanic' : 'Change mechanic'}">Assign</label>
+                        <div class="inline-form">
+                            <select class="form-select flex-grow-1" id="assignMechanic" name="mechanicId" required>
+                                <option value="">Choose…</option>
+                                <option th:each="m : ${mechanics}" th:value="${m.id}" th:text="${m.displayName}"
+                                        th:selected="${job.mechanic != null and job.mechanic.id == m.id}">Mechanic</option>
+                            </select>
+                            <button type="submit" class="btn btn-outline-primary">Assign</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Job summary</h2></div>
+                <div class="panel-body">
+                    <dl class="detail-list" style="grid-template-columns: 6.5rem 1fr">
+                        <dt>Customer</dt>
+                        <dd><a th:if="${currentUser.staff}" th:href="@{/customers/{id}(id=${job.customer.id})}" th:text="${job.customer.name}">Customer</a>
+                            <span th:unless="${currentUser.staff}" th:text="${job.customer.name}">Customer</span></dd>
+                        <dt>Vehicle</dt><dd th:text="${job.vehicle.registrationNumber + ' · ' + job.vehicle.fuelType.label}">MH12AB1234</dd>
+                        <dt>Appointment</dt>
+                        <dd><a th:if="${currentUser.staff}" th:href="@{/appointments/{id}(id=${job.appointment.id})}"
+                               th:text="${#temporals.format(job.appointment.appointmentDate, 'dd MMM yyyy')}">01 Jan 2026</a>
+                            <span th:unless="${currentUser.staff}" th:text="${#temporals.format(job.appointment.appointmentDate, 'dd MMM yyyy')}">01 Jan 2026</span></dd>
+                        <dt>Opened</dt><dd th:text="${#temporals.format(job.createdAt, 'dd MMM yyyy, hh:mm a')}">01 Jan 2026</dd>
+                        <dt>Started</dt><dd th:text="${job.startedAt != null ? #temporals.format(job.startedAt, 'dd MMM yyyy, hh:mm a') : '-'}">-</dd>
+                        <dt>Completed</dt><dd th:text="${job.completedAt != null ? #temporals.format(job.completedAt, 'dd MMM yyyy, hh:mm a') : '-'}">-</dd>
+                        <dt>Delivered</dt><dd th:text="${job.deliveredAt != null ? #temporals.format(job.deliveredAt, 'dd MMM yyyy, hh:mm a') : '-'}">-</dd>
+                    </dl>
+                </div>
+            </section>
+
+            <section class="panel" th:if="${currentUser.staff}">
+                <div class="panel-header"><h2 class="panel-title">Charges</h2></div>
+                <div class="panel-body">
+                    <dl class="detail-list" style="grid-template-columns: 1fr auto">
+                        <dt>Labour</dt><dd class="num" th:text="${@fmt.money(job.laborCharge)}">₹0.00</dd>
+                        <dt>Spare parts</dt><dd class="num" th:text="${@fmt.money(job.partsTotal)}">₹0.00</dd>
+                    </dl>
+                    <p class="form-text mt-2 mb-0" th:if="${invoice == null}">Tax and the grand total are calculated when the invoice is generated.</p>
+                    <div th:if="${invoice != null}" class="mt-3 pt-3 border-top">
+                        <p class="mb-1"><a th:href="@{/invoices/{id}(id=${invoice.id})}" th:text="${invoice.invoiceNumber}">INV-000001</a>
+                            <span th:replace="~{fragments/components :: badge(${invoice.paymentStatus})}"></span></p>
+                        <p class="mb-0">Grand total <strong th:text="${@fmt.money(invoice.grandTotal)}">₹0.00</strong> ·
+                            balance <strong th:text="${@fmt.money(invoice.balanceDue)}">₹0.00</strong></p>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><title>Reusable components</title></head>
+<body>
+
+<!--/* One sidebar link. 'key' is compared with the page's 'active' value to highlight it. */-->
+<li th:fragment="navItem(key, url, icon, label)" class="nav-item">
+    <a class="nav-link" th:href="@{${url}}" th:classappend="${active == key} ? 'active'"
+       th:attr="aria-current=${active == key} ? 'page' : null">
+        <i class="bi" th:classappend="${icon}" aria-hidden="true"></i>
+        <span th:text="${label}">Label</span>
+    </a>
+</li>
+
+<!--/* Success / error / warning / info messages passed through redirects (flash attributes). */-->
+<div th:fragment="alerts" class="alert-stack" aria-live="polite">
+    <div th:if="${success}" class="alert alert-success alert-dismissible fade show auto-dismiss" role="status">
+        <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+        <div class="alert-text" th:text="${success}">Saved.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
+        <div class="alert-text" th:text="${error}">Something went wrong.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${warning}" class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div class="alert-text" th:text="${warning}">Be careful.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    <div th:if="${info}" class="alert alert-info alert-dismissible fade show" role="status">
+        <i class="bi bi-info-circle-fill" aria-hidden="true"></i>
+        <div class="alert-text" th:text="${info}">For your information.</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+</div>
+
+<!--/* Errors that belong to the whole form rather than one field. Use inside a th:object form. */-->
+<div th:fragment="formErrors" th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger" role="alert">
+    <i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
+    <div class="alert-text">
+        <p class="mb-0" th:each="err : ${#fields.globalErrors()}" th:text="${err}">Error</p>
+    </div>
+</div>
+
+<!--/*
+    Status pill for any enum that has 'label' and 'badgeClass'
+    (job, appointment, payment and payment-record statuses).
+*/-->
+<span th:fragment="badge(status)" class="status-badge" th:classappend="${status.badgeClass}"
+      th:text="${status.label}">Status</span>
+
+<!--/* Yes/No style badge for active flags. */-->
+<span th:fragment="activeBadge(isActive)" class="status-badge"
+      th:classappend="${isActive} ? 'status-completed' : 'status-cancelled'"
+      th:text="${isActive} ? 'Active' : 'Inactive'">Active</span>
+
+<!--/*
+    Page links for a Spring Data Page. 'base' is the page's own URL including its current search
+    parameters (but not 'page'), e.g. th:with="base=@{/customers(q=${q})}".
+*/-->
+<nav th:fragment="pagination(page, base)" th:if="${page.totalPages > 1}" aria-label="Page navigation">
+    <ul class="pagination pagination-sm mb-0"
+        th:with="sep=${#strings.contains(base, '?') ? '&' : '?'},
+                 first=${page.number > 2 ? page.number - 2 : 0},
+                 last=${page.number + 2 < page.totalPages - 1 ? page.number + 2 : page.totalPages - 1}">
+        <li class="page-item" th:classappend="${page.first} ? 'disabled'">
+            <span class="page-link" th:if="${page.first}" aria-disabled="true">
+                <i class="bi bi-chevron-left" aria-hidden="true"></i><span class="visually-hidden">Previous page (not available)</span></span>
+            <a class="page-link" th:unless="${page.first}" th:href="${base + sep + 'page=' + (page.number - 1)}">
+                <i class="bi bi-chevron-left" aria-hidden="true"></i><span class="visually-hidden">Previous page</span></a>
+        </li>
+        <li class="page-item" th:if="${first > 0}">
+            <a class="page-link" th:href="${base + sep + 'page=0'}">1</a>
+        </li>
+        <li class="page-item disabled" th:if="${first > 1}"><span class="page-link">&hellip;</span></li>
+        <li class="page-item" th:each="i : ${#numbers.sequence(first, last)}"
+            th:classappend="${i == page.number} ? 'active'">
+            <a class="page-link" th:href="${base + sep + 'page=' + i}" th:text="${i + 1}"
+               th:attr="aria-current=${i == page.number} ? 'page' : null">1</a>
+        </li>
+        <li class="page-item disabled" th:if="${last < page.totalPages - 2}"><span class="page-link">&hellip;</span></li>
+        <li class="page-item" th:if="${last < page.totalPages - 1}">
+            <a class="page-link" th:href="${base + sep + 'page=' + (page.totalPages - 1)}" th:text="${page.totalPages}">9</a>
+        </li>
+        <li class="page-item" th:classappend="${page.last} ? 'disabled'">
+            <span class="page-link" th:if="${page.last}" aria-disabled="true">
+                <i class="bi bi-chevron-right" aria-hidden="true"></i><span class="visually-hidden">Next page (not available)</span></span>
+            <a class="page-link" th:unless="${page.last}" th:href="${base + sep + 'page=' + (page.number + 1)}">
+                <i class="bi bi-chevron-right" aria-hidden="true"></i><span class="visually-hidden">Next page</span></a>
+        </li>
+    </ul>
+</nav>
+
+<!--/* "Showing 1-10 of 42" line shown under tables. */-->
+<p th:fragment="resultSummary(page)" class="result-summary mb-0">
+    <th:block th:if="${page.totalElements == 0}">No results</th:block>
+    <th:block th:unless="${page.totalElements == 0}">
+        Showing <strong th:text="${page.number * page.size + 1}">1</strong>&ndash;<strong
+            th:text="${page.number * page.size + page.numberOfElements}">10</strong>
+        of <strong th:text="${page.totalElements}">42</strong>
+    </th:block>
+</p>
+
+<!--/* Friendly message shown inside a table or panel when there is nothing to list. */-->
+<div th:fragment="emptyState(icon, title, text)" class="empty-state">
+    <i class="bi" th:classappend="${icon}" aria-hidden="true"></i>
+    <p class="empty-title" th:text="${title}">Nothing here yet</p>
+    <p class="empty-text" th:if="${text != null}" th:text="${text}">Text</p>
+</div>
+
+<!--/* Hidden-field-free "Back" style link used at the top of detail pages. */-->
+<a th:fragment="backLink(url, label)" class="back-link" th:href="@{${url}}">
+    <i class="bi bi-arrow-left" aria-hidden="true"></i> <span th:text="${label}">Back</span>
+</a>
+
+<!--/* Heading that only appears on paper: business, report title, period and the day it was printed. */-->
+<div th:fragment="printHeading(title, from, to)" class="print-heading">
+    <strong th:text="${business.name}">Service Center</strong>
+    <h2 th:text="${title}">Report</h2>
+    <p>Period:
+        <span th:text="${from != null ? #temporals.format(from, 'dd MMM yyyy') : 'from the beginning'}">01 Jan 2026</span> to
+        <span th:text="${to != null ? #temporals.format(to, 'dd MMM yyyy') : 'today'}">31 Jan 2026</span>
+        &middot; printed on <span th:text="${#temporals.format(#temporals.createToday(), 'dd MMM yyyy')}">01 Feb 2026</span></p>
+</div>
+
+<!--/* Tabs at the top of every report page. 'tab' is one of revenue, appointments, jobs, invoices, payments. */-->
+<nav th:fragment="reportTabs(tab)" class="mb-3 no-print" aria-label="Report types">
+    <ul class="nav nav-tabs report-tabs">
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab == 'revenue'} ? 'active'" th:href="@{/reports}"
+                                th:attr="aria-current=${tab == 'revenue'} ? 'page' : null">Revenue summary</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab == 'appointments'} ? 'active'" th:href="@{/reports/appointments}"
+                                th:attr="aria-current=${tab == 'appointments'} ? 'page' : null">Appointments</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab == 'jobs'} ? 'active'" th:href="@{/reports/jobs}"
+                                th:attr="aria-current=${tab == 'jobs'} ? 'page' : null">Service jobs</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab == 'invoices'} ? 'active'" th:href="@{/reports/invoices}"
+                                th:attr="aria-current=${tab == 'invoices'} ? 'page' : null">Invoices</a></li>
+        <li class="nav-item"><a class="nav-link" th:classappend="${tab == 'payments'} ? 'active'" th:href="@{/reports/payments}"
+                                th:attr="aria-current=${tab == 'payments'} ? 'page' : null">Payments</a></li>
+    </ul>
+</nav>
+
+</body>
+</html>

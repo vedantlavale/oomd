@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title='Customers', active='customers', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Customers</h1>
+            <p class="page-subtitle">People who bring their vehicles to the workshop.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/customers/new}"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Add customer</a>
+        </div>
+    </div>
+
+    <section class="panel" th:with="base=@{/customers(q=${q})}">
+        <form class="filter-bar" method="get" th:action="@{/customers}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search customers</label>
+                <div class="search-field">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}"
+                           placeholder="Name, phone or email" maxlength="100">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a class="btn btn-outline-secondary" th:href="@{/customers}" th:if="${q != null and !q.isBlank()}">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">List of customers</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Contact</th>
+                    <th scope="col">Address</th>
+                    <th scope="col">Added</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="c : ${page.content}">
+                    <td class="cell-primary"><a th:href="@{/customers/{id}(id=${c.id})}" th:text="${c.name}">Name</a></td>
+                    <td>
+                        <span th:text="${c.phone}">9876543210</span>
+                        <span class="cell-sub" th:if="${c.email}" th:text="${c.email}">email</span>
+                    </td>
+                    <td th:text="${#strings.abbreviate(c.address ?: '-', 45)}">Address</td>
+                    <td th:text="${#temporals.format(c.createdAt, 'dd MMM yyyy')}">01 Jan 2026</td>
+                    <td class="col-actions">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/customers/{id}(id=${c.id})}"
+                           th:title="${'View ' + c.name}" th:attr="aria-label=${'View ' + c.name}"><i class="bi bi-eye" aria-hidden="true"></i></a>
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/customers/{id}/edit(id=${c.id})}"
+                           th:title="${'Edit ' + c.name}" th:attr="aria-label=${'Edit ' + c.name}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/customers/{id}/delete(id=${c.id})}" method="post"
+                              th:attr="data-confirm=${'Delete customer ' + c.name + '? This cannot be undone.'}"
+                              data-confirm-title="Delete customer" data-confirm-label="Delete">
+                            <button type="submit" class="btn btn-outline-danger btn-row"
+                                    th:title="${'Delete ' + c.name}" th:attr="aria-label=${'Delete ' + c.name}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${page.empty}"><div th:replace="~{fragments/components :: emptyState('bi-people', 'No customers found', ${q != null and !q.isBlank()} ? 'Try a different search.' : 'Add your first customer to get started.')}"></div></th:block>
+
+        <div class="panel-footer">
+            <p th:replace="~{fragments/components :: resultSummary(${page})}"></p>
+            <nav th:replace="~{fragments/components :: pagination(${page}, ${base})}"></nav>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

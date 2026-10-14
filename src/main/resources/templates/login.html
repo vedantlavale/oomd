@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/auth-layout :: authLayout(title='Sign in', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="auth-card">
+        <section class="auth-aside" aria-label="About this system">
+            <div>
+                <span class="brand-mark" aria-hidden="true"><i class="bi bi-gear-wide-connected"></i></span>
+                <h1>Vehicle Service Management System</h1>
+                <p th:text="${business.name}">Service Center</p>
+            </div>
+            <ul class="auth-points">
+                <li><i class="bi bi-calendar-check" aria-hidden="true"></i> Appointments and job cards</li>
+                <li><i class="bi bi-boxes" aria-hidden="true"></i> Spare parts and stock</li>
+                <li><i class="bi bi-receipt" aria-hidden="true"></i> Invoices and payments</li>
+            </ul>
+            <i class="bi bi-gear-wide-connected" aria-hidden="true"></i>
+        </section>
+
+        <section class="auth-form">
+            <h2>Sign in</h2>
+            <p class="text-muted mb-4">Use the account created for you by the administrator.</p>
+
+            <div class="alert alert-danger" role="alert" th:if="${param.error}">
+                <i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
+                <div class="alert-text">Invalid username or password, or the account is disabled.</div>
+            </div>
+            <div class="alert alert-success" role="status" th:if="${param.logout}">
+                <i class="bi bi-check-circle-fill" aria-hidden="true"></i>
+                <div class="alert-text">You have been signed out.</div>
+            </div>
+
+            <form th:action="@{/login}" method="post">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" required autofocus
+                           autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="50">
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required
+                           autocomplete="current-password" maxlength="100">
+                </div>
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-box-arrow-in-right me-1" aria-hidden="true"></i>Sign in
+                </button>
+            </form>
+        </section>
+    </div>
+</th:block>
+</body>
+</html>

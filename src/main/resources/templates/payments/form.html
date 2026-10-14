@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Record payment', active='payments', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="job=${invoice.serviceJob}">
+    <a th:replace="~{fragments/components :: backLink('/invoices/' + ${invoice.id}, 'Back to invoice')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Record payment</h1>
+            <p class="page-subtitle">Record money already received from the customer (no online payment is made).</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5 order-lg-2">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Invoice</h2>
+                    <span th:replace="~{fragments/components :: badge(${invoice.paymentStatus})}"></span></div>
+                <div class="panel-body">
+                    <dl class="detail-list" style="grid-template-columns: 7rem 1fr">
+                        <dt>Invoice</dt><dd><a th:href="@{/invoices/{id}(id=${invoice.id})}" th:text="${invoice.invoiceNumber}">INV-000001</a></dd>
+                        <dt>Customer</dt><dd th:text="${job.customer.name}">Customer</dd>
+                        <dt>Vehicle</dt><dd th:text="${job.vehicle.registrationNumber}">MH12AB1234</dd>
+                        <dt>Grand total</dt><dd class="num" th:text="${@fmt.money(invoice.grandTotal)}">₹0.00</dd>
+                        <dt>Already paid</dt><dd class="num" th:text="${@fmt.money(invoice.amountPaid)}">₹0.00</dd>
+                        <dt>Balance due</dt><dd class="num fw-bold" th:text="${@fmt.money(invoice.balanceDue)}">₹0.00</dd>
+                    </dl>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-7 order-lg-1">
+            <section class="panel">
+                <form th:object="${paymentForm}" th:action="@{/payments}" method="post" class="panel-body" novalidate>
+                    <div th:replace="~{fragments/components :: formErrors}"></div>
+                    <input type="hidden" th:field="*{invoiceId}">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="amount" class="form-label required">Amount received</label>
+                            <div class="input-group">
+                                <span class="input-group-text" th:text="${@fmt.symbol()}">₹</span>
+                                <input type="number" class="form-control" id="amount" th:field="*{amount}" th:errorclass="is-invalid"
+                                       required min="0.01" step="0.01" th:max="${invoice.balanceDue}" inputmode="decimal" aria-describedby="amountHelp">
+                            </div>
+                            <div class="invalid-feedback" th:errors="*{amount}">Error</div>
+                            <div class="form-text" id="amountHelp">Part payments are fine; the amount cannot be more than the balance due.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="method" class="form-label required">Payment method</label>
+                            <select class="form-select" id="method" th:field="*{method}" th:errorclass="is-invalid" required>
+                                <option th:each="m : ${methods}" th:value="${m}" th:text="${m.label}">Cash</option>
+                            </select>
+                            <div class="invalid-feedback" th:errors="*{method}">Error</div>
+                        </div>
+                        <div class="col-12">
+                            <label for="reference" class="form-label">Reference (optional)</label>
+                            <input type="text" class="form-control" id="reference" th:field="*{reference}" th:errorclass="is-invalid"
+                                   maxlength="100" placeholder="UPI transaction id, card slip number, note…" autocomplete="off">
+                            <div class="invalid-feedback" th:errors="*{reference}">Error</div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Record payment</button>
+                        <a class="btn btn-outline-secondary" th:href="@{/invoices/{id}(id=${invoice.id})}">Cancel</a>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

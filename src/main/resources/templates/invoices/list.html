@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Invoices', active='invoices', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Invoices</h1>
+            <p class="page-subtitle">Bills for completed jobs. Generate one from a completed job card.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-outline-secondary" th:href="@{/jobs(status='COMPLETED')}"><i class="bi bi-hourglass-split me-1" aria-hidden="true"></i>Jobs waiting to be invoiced</a>
+        </div>
+    </div>
+
+    <section class="panel" th:with="base=@{/invoices(q=${q}, status=${status}, from=${from}, to=${to})}">
+        <form class="filter-bar" method="get" th:action="@{/invoices}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search</label>
+                <div class="search-field">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}"
+                           placeholder="Invoice number, customer or registration number" maxlength="100">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label for="status">Payment status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All</option>
+                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == status}">Unpaid</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="from">Issued from</label>
+                <input type="date" class="form-control" id="from" name="from" th:value="${from}">
+            </div>
+            <div class="filter-field">
+                <label for="to">Issued to</label>
+                <input type="date" class="form-control" id="to" name="to" th:value="${to}">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a class="btn btn-outline-secondary" th:href="@{/invoices}"
+                   th:if="${(q != null and !q.isBlank()) or status != null or from != null or to != null}">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">Invoices</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Invoice</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Issued</th>
+                    <th scope="col" class="num">Total</th>
+                    <th scope="col" class="num">Paid</th>
+                    <th scope="col" class="num">Balance</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="i : ${page.content}">
+                    <td class="cell-primary"><a th:href="@{/invoices/{id}(id=${i.id})}" th:text="${i.invoiceNumber}">INV-000001</a>
+                        <span class="cell-sub" th:text="${i.serviceJob.jobNumber}">JC-000001</span></td>
+                    <td th:text="${i.serviceJob.customer.name}">Customer
+                        <span class="cell-sub" th:text="${i.serviceJob.vehicle.registrationNumber}">MH12AB1234</span></td>
+                    <td th:text="${#temporals.format(i.issuedAt, 'dd MMM yyyy')}">01 Jan 2026</td>
+                    <td class="num" th:text="${@fmt.money(i.grandTotal)}">₹0.00</td>
+                    <td class="num" th:text="${@fmt.money(i.amountPaid)}">₹0.00</td>
+                    <td class="num fw-600" th:text="${@fmt.money(i.balanceDue)}">₹0.00</td>
+                    <td><span th:replace="~{fragments/components :: badge(${i.paymentStatus})}"></span></td>
+                    <td class="col-actions">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/invoices/{id}(id=${i.id})}"
+                           th:title="${'View ' + i.invoiceNumber}" th:attr="aria-label=${'View ' + i.invoiceNumber}"><i class="bi bi-eye" aria-hidden="true"></i></a>
+                        <a class="btn btn-outline-primary btn-row" th:if="${i.paymentStatus.name() != 'PAID'}"
+                           th:href="@{/payments/new(invoiceId=${i.id})}"
+                           th:title="${'Record payment for ' + i.invoiceNumber}" th:attr="aria-label=${'Record payment for ' + i.invoiceNumber}"><i class="bi bi-cash-coin" aria-hidden="true"></i></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${page.empty}"><div th:replace="~{fragments/components :: emptyState('bi-receipt', 'No invoices found', 'Adjust the filters, or generate an invoice from a completed job.')}"></div></th:block>
+
+        <div class="panel-footer">
+            <p th:replace="~{fragments/components :: resultSummary(${page})}"></p>
+            <nav th:replace="~{fragments/components :: pagination(${page}, ${base})}"></nav>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

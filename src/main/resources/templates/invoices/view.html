@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=${invoice.invoiceNumber}, active='invoices', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="job=${invoice.serviceJob}">
+    <div class="no-print">
+        <a th:replace="~{fragments/components :: backLink('/invoices', 'Back to invoices')}"></a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title"><span th:text="${invoice.invoiceNumber}">INV-000001</span>
+                    <span th:replace="~{fragments/components :: badge(${invoice.paymentStatus})}"></span></h1>
+                <p class="page-subtitle">Job card <a th:href="@{/jobs/{id}(id=${job.id})}" th:text="${job.jobNumber}">JC-000001</a></p>
+            </div>
+            <div class="page-actions">
+                <button type="button" class="btn btn-outline-secondary" data-print><i class="bi bi-printer me-1" aria-hidden="true"></i>Print invoice</button>
+                <a class="btn btn-primary" th:if="${invoice.paymentStatus.name() != 'PAID'}" th:href="@{/payments/new(invoiceId=${invoice.id})}">
+                    <i class="bi bi-cash-coin me-1" aria-hidden="true"></i>Record payment</a>
+            </div>
+        </div>
+    </div>
+
+    <article class="invoice-sheet" aria-label="Invoice">
+        <header class="invoice-head">
+            <div class="invoice-brand">
+                <span class="brand-mark" aria-hidden="true"><i class="bi bi-gear-wide-connected"></i></span>
+                <div>
+                    <strong class="d-block fs-5" th:text="${business.name}">Service Center</strong>
+                    <span class="d-block small text-muted" th:if="${!#strings.isEmpty(business.address)}" th:text="${business.address}">Address</span>
+                    <span class="d-block small text-muted">
+                        <span th:if="${!#strings.isEmpty(business.phone)}" th:text="${business.phone}">Phone</span>
+                        <span th:if="${!#strings.isEmpty(business.phone) and !#strings.isEmpty(business.email)}"> · </span>
+                        <span th:if="${!#strings.isEmpty(business.email)}" th:text="${business.email}">Email</span>
+                    </span>
+                    <span class="d-block small text-muted" th:if="${!#strings.isEmpty(business.taxNumber)}" th:text="${'Tax no. ' + business.taxNumber}">Tax</span>
+                </div>
+            </div>
+            <div class="invoice-meta">
+                <h2 class="invoice-title">INVOICE</h2>
+                <div><strong th:text="${invoice.invoiceNumber}">INV-000001</strong></div>
+                <div>Date: <span th:text="${#temporals.format(invoice.issuedAt, 'dd MMM yyyy')}">01 Jan 2026</span></div>
+                <div>Job card: <span th:text="${job.jobNumber}">JC-000001</span></div>
+            </div>
+        </header>
+
+        <section class="invoice-parties">
+            <div>
+                <div class="invoice-label">Billed to</div>
+                <strong th:text="${job.customer.name}">Customer</strong>
+                <div th:text="${job.customer.phone}">9876543210</div>
+                <div th:if="${job.customer.email}" th:text="${job.customer.email}">email</div>
+                <div th:if="${job.customer.address}" th:text="${job.customer.address}">Address</div>
+            </div>
+            <div>
+                <div class="invoice-label">Vehicle</div>
+                <strong th:text="${job.vehicle.registrationNumber}">MH12AB1234</strong>
+                <div th:text="${job.vehicle.manufacturer + ' ' + job.vehicle.model + ' (' + job.vehicle.manufacturingYear + ')'}">Maker Model</div>
+                <div th:text="${job.vehicle.fuelType.label}">Petrol</div>
+                <div>Service: <span th:text="${job.serviceItem.name}">Service</span></div>
+            </div>
+        </section>
+
+        <div class="table-responsive">
+            <table class="invoice-table">
+                <caption class="visually-hidden">Invoice lines</caption>
+                <thead>
+                <tr><th scope="col">Description</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Unit price</th><th scope="col" class="num">Amount</th></tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>Labour - <span th:text="${job.serviceItem.name}">Service</span></td>
+                    <td class="num">1</td>
+                    <td class="num" th:text="${@fmt.number(invoice.laborCharge)}">0.00</td>
+                    <td class="num" th:text="${@fmt.number(invoice.laborCharge)}">0.00</td>
+                </tr>
+                <tr th:each="u : ${job.partUsages}" th:if="${u.stockDeducted}">
+                    <td><span th:text="${u.sparePart.name}">Part</span> <span class="text-muted small" th:text="${'(' + u.sparePart.sku + ')'}">(SKU)</span></td>
+                    <td class="num" th:text="${u.quantity}">1</td>
+                    <td class="num" th:text="${@fmt.number(u.unitPriceAtUse)}">0.00</td>
+                    <td class="num" th:text="${@fmt.number(u.lineTotal)}">0.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="invoice-totals">
+            <div><span>Labour</span><span th:text="${@fmt.money(invoice.laborCharge)}">₹0.00</span></div>
+            <div><span>Spare parts</span><span th:text="${@fmt.money(invoice.partsTotal)}">₹0.00</span></div>
+            <div><span>Subtotal</span><span th:text="${@fmt.money(invoice.subtotal)}">₹0.00</span></div>
+            <div><span th:text="${'Tax (' + invoice.taxPercent + '%)'}">Tax</span><span th:text="${@fmt.money(invoice.taxAmount)}">₹0.00</span></div>
+            <div class="grand"><span>Grand total</span><span th:text="${@fmt.money(invoice.grandTotal)}">₹0.00</span></div>
+            <div><span>Amount paid</span><span th:text="${@fmt.money(invoice.amountPaid)}">₹0.00</span></div>
+            <div class="fw-bold"><span>Balance due</span><span th:text="${@fmt.money(invoice.balanceDue)}">₹0.00</span></div>
+        </div>
+
+        <div class="text-center mt-4" th:if="${invoice.paymentStatus.name() == 'PAID'}"><span class="paid-stamp">PAID</span></div>
+
+        <footer class="invoice-footnote">
+            Thank you for choosing <span th:text="${business.name}">Service Center</span>.
+            Amounts are in <span th:text="${@fmt.symbol()}">₹</span>. This is a computer-generated invoice.
+        </footer>
+    </article>
+
+    <section class="panel no-print mt-4">
+        <div class="panel-header">
+            <h2 class="panel-title">Payments</h2>
+            <a class="btn btn-outline-primary btn-sm" th:if="${invoice.paymentStatus.name() != 'PAID'}" th:href="@{/payments/new(invoiceId=${invoice.id})}">
+                <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Record payment</a>
+        </div>
+        <div class="table-responsive" th:unless="${#lists.isEmpty(invoice.payments)}">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">Payments recorded for this invoice</caption>
+                <thead>
+                <tr><th scope="col">Receipt</th><th scope="col">Date</th><th scope="col">Method</th><th scope="col">Reference</th>
+                    <th scope="col" class="num">Amount</th><th scope="col">Status</th><th scope="col" class="col-actions"><span class="visually-hidden">Actions</span></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${invoice.payments}" th:classappend="${p.status.name() == 'REVERSED'} ? 'row-muted'">
+                    <td class="cell-primary"><a th:href="@{/payments/{id}(id=${p.id})}" th:text="${p.receiptNumber}">PAY-000001</a></td>
+                    <td th:text="${#temporals.format(p.paidAt, 'dd MMM yyyy, hh:mm a')}">01 Jan 2026</td>
+                    <td th:text="${p.method.label}">Cash</td>
+                    <td th:text="${p.reference ?: '-'}">-</td>
+                    <td class="num" th:text="${@fmt.money(p.amount)}">₹0.00</td>
+                    <td><span th:replace="~{fragments/components :: badge(${p.status})}"></span></td>
+                    <td class="col-actions">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/payments/{id}(id=${p.id})}"
+                           th:title="${'View receipt ' + p.receiptNumber}" th:attr="aria-label=${'View receipt ' + p.receiptNumber}"><i class="bi bi-receipt-cutoff" aria-hidden="true"></i></a>
+                        <a class="btn btn-outline-danger btn-row" sec:authorize="hasRole('ADMIN')" th:if="${p.status.name() == 'SUCCESSFUL'}"
+                           th:href="@{/payments/{id}/reverse(id=${p.id})}"
+                           th:title="${'Reverse ' + p.receiptNumber}" th:attr="aria-label=${'Reverse payment ' + p.receiptNumber}"><i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${#lists.isEmpty(invoice.payments)}"><div th:replace="~{fragments/components :: emptyState('bi-cash-coin', 'No payments yet', 'Record a payment when the customer pays all or part of the invoice.')}"></div></th:block>
+    </section>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=${payment.receiptNumber}, active='payments', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="invoice=${payment.invoice}, job=${payment.invoice.serviceJob}">
+    <div class="no-print">
+        <a th:replace="~{fragments/components :: backLink('/invoices/' + ${invoice.id}, 'Back to invoice')}"></a>
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Payment receipt <span th:replace="~{fragments/components :: badge(${payment.status})}"></span></h1>
+                <p class="page-subtitle" th:text="${payment.receiptNumber}">PAY-000001</p>
+            </div>
+            <div class="page-actions">
+                <button type="button" class="btn btn-outline-secondary" data-print><i class="bi bi-printer me-1" aria-hidden="true"></i>Print receipt</button>
+                <a class="btn btn-outline-danger" sec:authorize="hasRole('ADMIN')" th:if="${payment.status.name() == 'SUCCESSFUL'}"
+                   th:href="@{/payments/{id}/reverse(id=${payment.id})}"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Reverse payment</a>
+            </div>
+        </div>
+    </div>
+
+    <article class="invoice-sheet" style="max-width: 640px" aria-label="Payment receipt">
+        <header class="invoice-head">
+            <div class="invoice-brand">
+                <span class="brand-mark" aria-hidden="true"><i class="bi bi-gear-wide-connected"></i></span>
+                <div><strong class="d-block fs-5" th:text="${business.name}">Service Center</strong>
+                    <span class="d-block small text-muted" th:text="${business.address}">Address</span></div>
+            </div>
+            <div class="invoice-meta">
+                <h2 class="invoice-title fs-4">RECEIPT</h2>
+                <div><strong th:text="${payment.receiptNumber}">PAY-000001</strong></div>
+                <div th:text="${#temporals.format(payment.paidAt, 'dd MMM yyyy, hh:mm a')}">01 Jan 2026</div>
+            </div>
+        </header>
+        <dl class="detail-list my-4" style="grid-template-columns: 9rem 1fr">
+            <dt>Received from</dt><dd th:text="${job.customer.name}">Customer</dd>
+            <dt>Vehicle</dt><dd th:text="${job.vehicle.registrationNumber}">MH12AB1234</dd>
+            <dt>Against invoice</dt><dd th:text="${invoice.invoiceNumber}">INV-000001</dd>
+            <dt>Method</dt><dd th:text="${payment.method.label}">Cash</dd>
+            <dt>Reference</dt><dd th:text="${payment.reference ?: '-'}">-</dd>
+            <dt>Recorded by</dt><dd th:text="${payment.recordedBy ?: '-'}">user</dd>
+            <dt>Invoice balance</dt><dd th:text="${@fmt.money(invoice.balanceDue)}">₹0.00</dd>
+        </dl>
+        <div class="invoice-totals"><div class="grand"><span>Amount received</span><span th:text="${@fmt.money(payment.amount)}">₹0.00</span></div></div>
+        <p class="mt-3 mb-0 text-danger" th:if="${payment.status.name() == 'REVERSED'}">
+            Reversed on <span th:text="${#temporals.format(payment.reversedAt, 'dd MMM yyyy, hh:mm a')}">date</span>:
+            <span th:text="${payment.reversalReason}">reason</span></p>
+        <footer class="invoice-footnote">Thank you. This is a computer-generated receipt.</footer>
+    </article>
+</th:block>
+</body>
+</html>

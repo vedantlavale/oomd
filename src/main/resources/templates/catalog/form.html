@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title=${item == null ? 'Add service' : 'Edit service'}, active='catalog', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/catalog', 'Back to service catalog')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${item == null ? 'Add service' : 'Edit service'}">Add service</h1>
+            <p class="page-subtitle">The standard price is used as the default labour charge on new job cards.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${catalogItemForm}" th:action="${item == null} ? @{/catalog} : @{/catalog/{id}(id=${item.id})}"
+              method="post" class="panel-body" novalidate>
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label for="name" class="form-label required">Service name</label>
+                    <input type="text" class="form-control" id="name" th:field="*{name}" th:errorclass="is-invalid" required maxlength="100" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{name}">Error</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="standardPrice" class="form-label required">Standard price</label>
+                    <div class="input-group">
+                        <span class="input-group-text" th:text="${@fmt.symbol()}">₹</span>
+                        <input type="number" class="form-control" id="standardPrice" th:field="*{standardPrice}" th:errorclass="is-invalid"
+                               required min="0" step="0.01" inputmode="decimal">
+                    </div>
+                    <div class="invalid-feedback" th:errors="*{standardPrice}">Error</div>
+                </div>
+                <div class="col-12">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" th:field="*{description}" th:errorclass="is-invalid" rows="2" maxlength="255"></textarea>
+                    <div class="invalid-feedback" th:errors="*{description}">Error</div>
+                </div>
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="active" th:field="*{active}">
+                        <label class="form-check-label" for="active">Active (available for new bookings)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                    <span th:text="${item == null ? 'Save service' : 'Save changes'}">Save</span></button>
+                <a class="btn btn-outline-secondary" th:href="@{/catalog}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

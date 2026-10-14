@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title='Dashboard', active='dashboard', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Welcome back, <span th:text="${currentUser.fullName}">user</span>.
+                <span th:if="${stats != null}">Here is how the workshop is doing.</span>
+                <span th:if="${mine != null}">Here is your work.</span></p>
+        </div>
+        <div class="page-actions" sec:authorize="hasAnyRole('ADMIN','SERVICE_ADVISOR')">
+            <a class="btn btn-primary" th:href="@{/appointments/new}"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Book appointment</a>
+            <a class="btn btn-outline-secondary" th:href="@{/customers/new}"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Add customer</a>
+        </div>
+    </div>
+
+    <!-- ===================== Administrator / service advisor ===================== -->
+    <th:block th:if="${stats != null}">
+        <div class="alert alert-warning" role="status" th:if="${stats.lowStockParts > 0}">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <div class="alert-text"><strong th:text="${stats.lowStockParts}">2</strong> spare part(s) are low on stock.
+                <a th:href="@{/parts(low=true)}">Review them</a></div>
+        </div>
+
+        <h2 class="visually-hidden">Key numbers</h2>
+        <div class="kpi-grid cols-3">
+            <a class="kpi" th:href="@{/customers}">
+                <span class="kpi-icon"><i class="bi bi-people" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${stats.customerCount}">0</span><span class="kpi-label">Customers</span></span>
+            </a>
+            <a class="kpi" th:href="@{/vehicles}">
+                <span class="kpi-icon"><i class="bi bi-car-front" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${stats.vehicleCount}">0</span><span class="kpi-label">Registered vehicles</span></span>
+            </a>
+            <a class="kpi" th:href="@{/appointments(from=${#temporals.createToday()}, to=${#temporals.createToday()})}">
+                <span class="kpi-icon"><i class="bi bi-calendar-check" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${stats.todayAppointmentCount}">0</span><span class="kpi-label">Appointments today</span></span>
+            </a>
+            <a class="kpi" th:href="@{/jobs}">
+                <span class="kpi-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${stats.pendingJobs}">0</span><span class="kpi-label">Pending jobs</span>
+                    <span class="kpi-note d-block">Created or assigned</span></span>
+            </a>
+            <a class="kpi" th:href="@{/jobs}">
+                <span class="kpi-icon"><i class="bi bi-wrench-adjustable" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${stats.inProgressJobs + stats.onHoldJobs}">0</span><span class="kpi-label">Jobs in progress</span>
+                    <span class="kpi-note d-block" th:text="${stats.onHoldJobs + ' on hold'}">0 on hold</span></span>
+            </a>
+            <a class="kpi" th:href="@{/jobs}">
+                <span class="kpi-icon"><i class="bi bi-check2-circle" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${stats.completedJobs}">0</span><span class="kpi-label">Completed jobs</span>
+                    <span class="kpi-note d-block">Including invoiced and delivered</span></span>
+            </a>
+        </div>
+
+        <h2 class="visually-hidden">Revenue</h2>
+        <div class="kpi-grid cols-3">
+            <a class="kpi" th:href="@{/reports}">
+                <span class="kpi-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${@fmt.money(stats.revenueTotal)}">₹0.00</span><span class="kpi-label">Revenue recorded (all time)</span>
+                    <span class="kpi-note d-block">Successful payments only</span></span>
+            </a>
+            <a class="kpi" th:href="@{/reports}">
+                <span class="kpi-icon"><i class="bi bi-graph-up-arrow" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${@fmt.money(stats.revenueThisMonth)}">₹0.00</span><span class="kpi-label">Collected this month</span>
+                    <span class="kpi-note d-block" th:text="${@fmt.money(stats.revenueToday) + ' today'}">₹0.00 today</span></span>
+            </a>
+            <a class="kpi" th:href="@{/invoices(status='UNPAID')}">
+                <span class="kpi-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${@fmt.money(stats.outstanding)}">₹0.00</span><span class="kpi-label">Outstanding balance</span>
+                    <span class="kpi-note d-block" th:text="${stats.unpaidInvoices + ' unpaid or part-paid invoice(s)'}">0 invoices</span></span>
+            </a>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-xl-6">
+                <section class="panel h-100">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Today's appointments</h2>
+                        <a class="btn btn-outline-secondary btn-sm" th:href="@{/appointments/new}">Book new</a>
+                    </div>
+                    <div class="table-responsive" th:unless="${#lists.isEmpty(stats.todayAppointments)}">
+                        <table class="table table-vsms">
+                            <caption class="visually-hidden">Appointments scheduled for today</caption>
+                            <thead><tr><th scope="col">Time</th><th scope="col">Vehicle</th><th scope="col">Service</th><th scope="col">Status</th></tr></thead>
+                            <tbody>
+                            <tr th:each="a : ${stats.todayAppointments}">
+                                <td class="cell-primary text-nowrap"><a th:href="@{/appointments/{id}(id=${a.id})}" th:text="${#temporals.format(a.appointmentTime, 'hh:mm a')}">09:00 AM</a></td>
+                                <td th:text="${a.vehicle.registrationNumber}">MH12AB1234<span class="cell-sub" th:text="${a.customer.name}">Customer</span></td>
+                                <td th:text="${a.serviceItem.name}">Service</td>
+                                <td><span th:replace="~{fragments/components :: badge(${a.status})}"></span></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <th:block th:if="${#lists.isEmpty(stats.todayAppointments)}"><div th:replace="~{fragments/components :: emptyState('bi-calendar-check', 'Nothing scheduled today', 'Booked appointments for today will show up here.')}"></div></th:block>
+                </section>
+            </div>
+            <div class="col-xl-6">
+                <section class="panel h-100">
+                    <div class="panel-header">
+                        <h2 class="panel-title">Recent service jobs</h2>
+                        <a class="btn btn-outline-secondary btn-sm" th:href="@{/jobs}">View all</a>
+                    </div>
+                    <div class="table-responsive" th:unless="${#lists.isEmpty(stats.recentJobs)}">
+                        <table class="table table-vsms">
+                            <caption class="visually-hidden">Most recent job cards</caption>
+                            <thead><tr><th scope="col">Job card</th><th scope="col">Vehicle</th><th scope="col">Mechanic</th><th scope="col">Status</th></tr></thead>
+                            <tbody>
+                            <tr th:each="j : ${stats.recentJobs}">
+                                <td class="cell-primary"><a th:href="@{/jobs/{id}(id=${j.id})}" th:text="${j.jobNumber}">JC-000001</a></td>
+                                <td th:text="${j.vehicle.registrationNumber}">MH12AB1234<span class="cell-sub" th:text="${j.serviceItem.name}">Service</span></td>
+                                <td th:text="${j.mechanic != null ? j.mechanic.name : '-'}">Mechanic</td>
+                                <td><span th:replace="~{fragments/components :: badge(${j.status})}"></span></td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <th:block th:if="${#lists.isEmpty(stats.recentJobs)}"><div th:replace="~{fragments/components :: emptyState('bi-wrench-adjustable', 'No jobs yet', 'Create a job card from a scheduled appointment.')}"></div></th:block>
+                </section>
+            </div>
+        </div>
+
+        <section class="panel mt-4" aria-labelledby="quickLinksTitle">
+            <div class="panel-header"><h2 class="panel-title" id="quickLinksTitle">Quick navigation</h2></div>
+            <div class="panel-body">
+                <div class="quick-links">
+                    <a class="quick-link" th:href="@{/appointments}"><i class="bi bi-calendar-check" aria-hidden="true"></i>Appointments</a>
+                    <a class="quick-link" th:href="@{/jobs}"><i class="bi bi-wrench-adjustable" aria-hidden="true"></i>Service jobs</a>
+                    <a class="quick-link" th:href="@{/customers}"><i class="bi bi-people" aria-hidden="true"></i>Customers</a>
+                    <a class="quick-link" th:href="@{/vehicles}"><i class="bi bi-car-front" aria-hidden="true"></i>Vehicles</a>
+                    <a class="quick-link" th:href="@{/mechanics}"><i class="bi bi-person-gear" aria-hidden="true"></i>Mechanics</a>
+                    <a class="quick-link" th:href="@{/catalog}"><i class="bi bi-tags" aria-hidden="true"></i>Service catalog</a>
+                    <a class="quick-link" th:href="@{/parts}"><i class="bi bi-boxes" aria-hidden="true"></i>Spare parts</a>
+                    <a class="quick-link" th:href="@{/invoices}"><i class="bi bi-receipt" aria-hidden="true"></i>Invoices</a>
+                    <a class="quick-link" th:href="@{/payments}"><i class="bi bi-cash-coin" aria-hidden="true"></i>Payments</a>
+                    <a class="quick-link" th:href="@{/reports}"><i class="bi bi-bar-chart-line" aria-hidden="true"></i>Reports</a>
+                    <a class="quick-link" sec:authorize="hasRole('ADMIN')" th:href="@{/users}"><i class="bi bi-shield-lock" aria-hidden="true"></i>Users</a>
+                </div>
+            </div>
+        </section>
+    </th:block>
+
+    <!-- ============================== Mechanic ============================== -->
+    <th:block th:if="${mine != null}">
+        <div class="alert alert-warning" role="alert" th:unless="${mine.linked}">
+            <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+            <div class="alert-text">Your login is not linked to a mechanic profile, so no jobs can be assigned to you. Ask an administrator to fix this.</div>
+        </div>
+        <div class="kpi-grid cols-3">
+            <a class="kpi" th:href="@{/jobs}">
+                <span class="kpi-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${mine.assigned}">0</span><span class="kpi-label">Waiting to start</span></span>
+            </a>
+            <a class="kpi" th:href="@{/jobs}">
+                <span class="kpi-icon"><i class="bi bi-wrench-adjustable" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${mine.inProgress}">0</span><span class="kpi-label">In progress</span></span>
+            </a>
+            <a class="kpi" th:href="@{/jobs}">
+                <span class="kpi-icon"><i class="bi bi-pause-circle" aria-hidden="true"></i></span>
+                <span><span class="kpi-value d-block" th:text="${mine.onHold}">0</span><span class="kpi-label">On hold</span></span>
+            </a>
+        </div>
+        <section class="panel">
+            <div class="panel-header">
+                <h2 class="panel-title">My open jobs</h2>
+                <a class="btn btn-outline-secondary btn-sm" th:href="@{/jobs}">All my jobs</a>
+            </div>
+            <div class="table-responsive" th:unless="${#lists.isEmpty(mine.openJobs)}">
+                <table class="table table-vsms">
+                    <caption class="visually-hidden">Jobs assigned to me that are not finished</caption>
+                    <thead><tr><th scope="col">Job card</th><th scope="col">Vehicle</th><th scope="col">Service</th><th scope="col">Status</th></tr></thead>
+                    <tbody>
+                    <tr th:each="j : ${mine.openJobs}">
+                        <td class="cell-primary"><a th:href="@{/jobs/{id}(id=${j.id})}" th:text="${j.jobNumber}">JC-000001</a></td>
+                        <td th:text="${j.vehicle.registrationNumber}">MH12AB1234<span class="cell-sub" th:text="${j.vehicle.manufacturer + ' ' + j.vehicle.model}">Maker Model</span></td>
+                        <td th:text="${j.serviceItem.name}">Service</td>
+                        <td><span th:replace="~{fragments/components :: badge(${j.status})}"></span></td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <th:block th:if="${#lists.isEmpty(mine.openJobs)}"><div th:replace="~{fragments/components :: emptyState('bi-emoji-smile', 'You are all caught up', 'Jobs assigned to you will appear here.')}"></div></th:block>
+        </section>
+    </th:block>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Add user', active='users', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/users', 'Back to users')}"></a>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Add user</h1>
+            <p class="page-subtitle">Mechanic accounts must be linked to a mechanic so they can see their assigned jobs.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${userCreateForm}" th:action="@{/users}" method="post" class="panel-body" novalidate>
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="username" class="form-label required">Username</label>
+                    <input type="text" class="form-control" id="username" th:field="*{username}" th:errorclass="is-invalid"
+                           required maxlength="30" autocomplete="off" autocapitalize="none" spellcheck="false">
+                    <div class="invalid-feedback" th:errors="*{username}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="fullName" class="form-label required">Full name</label>
+                    <input type="text" class="form-control" id="fullName" th:field="*{fullName}" th:errorclass="is-invalid" required maxlength="100" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{fullName}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="role" class="form-label required">Role</label>
+                    <select class="form-select" id="role" th:field="*{role}" th:errorclass="is-invalid" required>
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="${r.label}">Administrator</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{role}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="mechanicId" class="form-label">Linked mechanic (mechanic role only)</label>
+                    <select class="form-select" id="mechanicId" th:field="*{mechanicId}" th:errorclass="is-invalid">
+                        <option value="">None</option>
+                        <option th:each="m : ${mechanics}" th:value="${m.id}" th:text="${m.displayName}">Mechanic</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{mechanicId}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="password" class="form-label required">Password</label>
+                    <input type="password" class="form-control" id="password" th:field="*{password}" th:errorclass="is-invalid"
+                           required maxlength="72" autocomplete="new-password" aria-describedby="passwordHelp">
+                    <div class="invalid-feedback" th:errors="*{password}">Error</div>
+                    <div class="form-text" id="passwordHelp">Use 8 to 72 characters with at least one letter and one digit.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="confirmPassword" class="form-label required">Repeat password</label>
+                    <input type="password" class="form-control" id="confirmPassword" th:field="*{confirmPassword}" th:errorclass="is-invalid"
+                           required maxlength="72" autocomplete="new-password">
+                    <div class="invalid-feedback" th:errors="*{confirmPassword}">Error</div>
+                    <div class="invalid-feedback" th:errors="*{passwordsMatch}">Error</div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Create account</button>
+                <a class="btn btn-outline-secondary" th:href="@{/users}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

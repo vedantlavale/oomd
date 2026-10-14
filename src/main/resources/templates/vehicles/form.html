@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title=${vehicle == null ? 'Register vehicle' : 'Edit vehicle'}, active='vehicles', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink(${vehicle == null ? '/vehicles' : '/vehicles/' + vehicle.id}, ${vehicle == null ? 'Back to vehicles' : 'Back to vehicle'})}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${vehicle == null ? 'Register vehicle' : 'Edit vehicle'}">Register vehicle</h1>
+            <p class="page-subtitle">Fields marked with * are required.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${vehicleForm}" th:action="${vehicle == null} ? @{/vehicles} : @{/vehicles/{id}(id=${vehicle.id})}"
+              method="post" class="panel-body" novalidate>
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="registrationNumber" class="form-label required">Registration number</label>
+                    <input type="text" class="form-control text-uppercase" id="registrationNumber" th:field="*{registrationNumber}"
+                           th:errorclass="is-invalid" required maxlength="20" placeholder="e.g. MH12AB1234"
+                           autocomplete="off" spellcheck="false" aria-describedby="registrationHelp">
+                    <div class="invalid-feedback" th:errors="*{registrationNumber}">Error</div>
+                    <div class="form-text" id="registrationHelp">Spaces and hyphens are ignored. Each number can be registered once.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="customerId" class="form-label required">Owner</label>
+                    <select class="form-select" id="customerId" th:field="*{customerId}" th:errorclass="is-invalid" required>
+                        <option value="">Choose a customer…</option>
+                        <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name + ' · ' + c.phone}">Customer</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{customerId}">Error</div>
+                    <div class="form-text">Not in the list? <a th:href="@{/customers/new}">Add the customer first</a>.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="manufacturer" class="form-label required">Manufacturer</label>
+                    <input type="text" class="form-control" id="manufacturer" th:field="*{manufacturer}" th:errorclass="is-invalid"
+                           required maxlength="60" placeholder="e.g. Maruti Suzuki" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{manufacturer}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="model" class="form-label required">Model</label>
+                    <input type="text" class="form-control" id="model" th:field="*{model}" th:errorclass="is-invalid"
+                           required maxlength="60" placeholder="e.g. Swift VXi" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{model}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="manufacturingYear" class="form-label required">Manufacturing year</label>
+                    <input type="number" class="form-control" id="manufacturingYear" th:field="*{manufacturingYear}" th:errorclass="is-invalid"
+                           required min="1950" max="2100" step="1" inputmode="numeric" placeholder="e.g. 2021">
+                    <div class="invalid-feedback" th:errors="*{manufacturingYear}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="fuelType" class="form-label required">Fuel type</label>
+                    <select class="form-select" id="fuelType" th:field="*{fuelType}" th:errorclass="is-invalid" required>
+                        <option value="">Choose…</option>
+                        <option th:each="f : ${fuelTypes}" th:value="${f}" th:text="${f.label}">Petrol</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{fuelType}">Error</div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                    <span th:text="${vehicle == null ? 'Register vehicle' : 'Save changes'}">Save</span></button>
+                <a class="btn btn-outline-secondary" th:href="${vehicle == null} ? @{/vehicles} : @{/vehicles/{id}(id=${vehicle.id})}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

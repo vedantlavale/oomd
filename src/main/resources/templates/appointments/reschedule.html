@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Reschedule appointment', active='appointments', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/appointments/' + ${appointment.id}, 'Back to appointment')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reschedule appointment</h1>
+            <p class="page-subtitle"><span th:text="${appointment.customer.name}">Customer</span> ·
+                <span th:text="${appointment.vehicle.registrationNumber}">MH12AB1234</span> ·
+                <span th:text="${appointment.serviceItem.name}">Service</span></p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${rescheduleForm}" th:action="@{/appointments/{id}/reschedule(id=${appointment.id})}" method="post"
+              class="panel-body" novalidate
+              th:attr="data-slots-url=@{/appointments/slots}, data-service-id=${appointment.serviceItem.id}, data-current-date=${appointment.appointmentDate}, data-current-time=${#temporals.format(appointment.appointmentTime, 'HH:mm')}">
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+            <p class="text-muted">Currently
+                <strong th:text="${#temporals.format(appointment.appointmentDate, 'dd MMM yyyy')}">01 Jan 2026</strong> at
+                <strong th:text="${#temporals.format(appointment.appointmentTime, 'hh:mm a')}">09:00 AM</strong>.</p>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="appointmentDate" class="form-label required">New date</label>
+                    <input type="date" class="form-control" id="appointmentDate" th:field="*{appointmentDate}" th:errorclass="is-invalid"
+                           required th:min="${minDate}" th:max="${maxDate}">
+                    <div class="invalid-feedback" th:errors="*{appointmentDate}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="appointmentTime" class="form-label required">New time slot</label>
+                    <select class="form-select" id="appointmentTime" th:field="*{appointmentTime}" th:errorclass="is-invalid" required>
+                        <option value="">Choose a time…</option>
+                        <option th:each="t : ${timeSlots}" th:value="${#temporals.format(t, 'HH:mm')}"
+                                th:text="${#temporals.format(t, 'hh:mm a')}">09:00 AM</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{appointmentTime}">Error</div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-calendar2-check me-1" aria-hidden="true"></i>Reschedule</button>
+                <a class="btn btn-outline-secondary" th:href="@{/appointments/{id}(id=${appointment.id})}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

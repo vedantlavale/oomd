@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title='Service catalog', active='catalog', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Service catalog</h1>
+            <p class="page-subtitle">Services customers can book, with their standard labour price.</p>
+        </div>
+        <div class="page-actions" sec:authorize="hasRole('ADMIN')">
+            <a class="btn btn-primary" th:href="@{/catalog/new}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add service</a>
+        </div>
+    </div>
+
+    <section class="panel" th:with="base=@{/catalog(q=${q}, status=${status})}">
+        <form class="filter-bar" method="get" th:action="@{/catalog}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search services</label>
+                <div class="search-field">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}" placeholder="Name or description" maxlength="100">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label for="status">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All</option>
+                    <option value="active" th:selected="${status == 'active'}">Active</option>
+                    <option value="inactive" th:selected="${status == 'inactive'}">Inactive</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a class="btn btn-outline-secondary" th:href="@{/catalog}" th:if="${(q != null and !q.isBlank()) or (status != null and !status.isBlank())}">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">Services offered by the workshop</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Service</th>
+                    <th scope="col">Description</th>
+                    <th scope="col" class="num">Standard price</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="col-actions" sec:authorize="hasRole('ADMIN')">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="s : ${page.content}" th:classappend="${!s.active} ? 'row-muted'">
+                    <td class="cell-primary" th:text="${s.name}">Service</td>
+                    <td th:text="${#strings.abbreviate(s.description ?: '-', 60)}">Description</td>
+                    <td class="num" th:text="${@fmt.money(s.standardPrice)}">₹1,000.00</td>
+                    <td><span th:replace="~{fragments/components :: activeBadge(${s.active})}"></span></td>
+                    <td class="col-actions" sec:authorize="hasRole('ADMIN')">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/catalog/{id}/edit(id=${s.id})}"
+                           th:title="${'Edit ' + s.name}" th:attr="aria-label=${'Edit ' + s.name}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                        <form th:action="@{/catalog/{id}/active(id=${s.id})}" method="post">
+                            <input type="hidden" name="active" th:value="${!s.active}">
+                            <button type="submit" class="btn btn-outline-secondary btn-row"
+                                    th:title="${s.active ? 'Make inactive: ' + s.name : 'Make active: ' + s.name}"
+                                    th:attr="aria-label=${s.active ? 'Make inactive: ' + s.name : 'Make active: ' + s.name}">
+                                <i class="bi" th:classappend="${s.active} ? 'bi-toggle-on' : 'bi-toggle-off'" aria-hidden="true"></i></button>
+                        </form>
+                        <form th:action="@{/catalog/{id}/delete(id=${s.id})}" method="post"
+                              th:attr="data-confirm=${'Delete service ' + s.name + '? Services that were booked before cannot be deleted.'}"
+                              data-confirm-title="Delete service" data-confirm-label="Delete">
+                            <button type="submit" class="btn btn-outline-danger btn-row"
+                                    th:title="${'Delete ' + s.name}" th:attr="aria-label=${'Delete ' + s.name}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${page.empty}"><div th:replace="~{fragments/components :: emptyState('bi-tags', 'No services found', 'Adjust the search or add a service.')}"></div></th:block>
+
+        <div class="panel-footer">
+            <p th:replace="~{fragments/components :: resultSummary(${page})}"></p>
+            <nav th:replace="~{fragments/components :: pagination(${page}, ${base})}"></nav>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

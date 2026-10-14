@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title=${customer == null ? 'Add customer' : 'Edit customer'}, active='customers', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink(${customer == null ? '/customers' : '/customers/' + customer.id}, ${customer == null ? 'Back to customers' : 'Back to customer'})}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${customer == null ? 'Add customer' : 'Edit customer'}">Add customer</h1>
+            <p class="page-subtitle">Fields marked with * are required.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${customerForm}" th:action="${customer == null} ? @{/customers} : @{/customers/{id}(id=${customer.id})}"
+              method="post" class="panel-body" novalidate>
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="name" class="form-label required">Full name</label>
+                    <input type="text" class="form-control" id="name" th:field="*{name}" th:errorclass="is-invalid"
+                           required maxlength="100" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{name}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="phone" class="form-label required">Phone</label>
+                    <input type="tel" class="form-control" id="phone" th:field="*{phone}" th:errorclass="is-invalid"
+                           required maxlength="20" inputmode="tel" placeholder="e.g. 9876543210" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{phone}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    <input type="email" class="form-control" id="email" th:field="*{email}" th:errorclass="is-invalid"
+                           maxlength="120" inputmode="email" spellcheck="false" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{email}">Error</div>
+                </div>
+                <div class="col-12">
+                    <label for="address" class="form-label">Address</label>
+                    <textarea class="form-control" id="address" th:field="*{address}" th:errorclass="is-invalid"
+                              rows="2" maxlength="255"></textarea>
+                    <div class="invalid-feedback" th:errors="*{address}">Error</div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                    <span th:text="${customer == null ? 'Save customer' : 'Save changes'}">Save</span></button>
+                <a class="btn btn-outline-secondary" th:href="${customer == null} ? @{/customers} : @{/customers/{id}(id=${customer.id})}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

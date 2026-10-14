@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Appointment', active='appointments', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="a=${details.appointment}, job=${details.job}">
+    <a th:replace="~{fragments/components :: backLink('/appointments', 'Back to appointments')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Appointment <span th:replace="~{fragments/components :: badge(${a.status})}"></span></h1>
+            <p class="page-subtitle">
+                <span th:text="${#temporals.format(a.appointmentDate, 'EEEE, dd MMM yyyy')}">Monday, 01 Jan 2026</span> at
+                <span th:text="${#temporals.format(a.appointmentTime, 'hh:mm a')}">09:00 AM</span>
+            </p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:if="${a.status.name() == 'SCHEDULED'}" th:href="@{/jobs/new(appointmentId=${a.id})}">
+                <i class="bi bi-clipboard-plus me-1" aria-hidden="true"></i>Create job card</a>
+            <a class="btn btn-primary" th:if="${job != null}" th:href="@{/jobs/{id}(id=${job.id})}">
+                <i class="bi bi-wrench-adjustable me-1" aria-hidden="true"></i>Open job card <span th:text="${job.jobNumber}">JC-000001</span></a>
+            <a class="btn btn-outline-secondary" th:if="${a.status.name() == 'SCHEDULED'}" th:href="@{/appointments/{id}/reschedule(id=${a.id})}">
+                <i class="bi bi-calendar2-week me-1" aria-hidden="true"></i>Reschedule</a>
+            <form th:if="${a.status.name() == 'SCHEDULED'}" th:action="@{/appointments/{id}/cancel(id=${a.id})}" method="post"
+                  data-confirm="Cancel this appointment? The time slot becomes free again."
+                  data-confirm-title="Cancel appointment" data-confirm-label="Cancel appointment">
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-x-lg me-1" aria-hidden="true"></i>Cancel appointment</button>
+            </form>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <div class="panel-header"><h2 class="panel-title">Booking details</h2></div>
+        <div class="panel-body">
+            <dl class="detail-list">
+                <dt>Customer</dt>
+                <dd><a th:href="@{/customers/{id}(id=${a.customer.id})}" th:text="${a.customer.name}">Customer</a>
+                    · <span th:text="${a.customer.phone}">9876543210</span></dd>
+                <dt>Vehicle</dt>
+                <dd><a th:href="@{/vehicles/{id}(id=${a.vehicle.id})}" th:text="${a.vehicle.registrationNumber}">MH12AB1234</a>
+                    · <span th:text="${a.vehicle.manufacturer + ' ' + a.vehicle.model}">Maker Model</span></dd>
+                <dt>Requested service</dt>
+                <dd><span th:text="${a.serviceItem.name}">Service</span>
+                    <span class="cell-sub" th:text="${'Standard price ' + @fmt.money(a.serviceItem.standardPrice)}">Standard price</span></dd>
+                <dt>Notes</dt>
+                <dd><span th:if="${a.notes}" th:text="${a.notes}">Notes</span><span th:unless="${a.notes}" class="text-muted">None</span></dd>
+                <dt>Booked on</dt>
+                <dd th:text="${#temporals.format(a.createdAt, 'dd MMM yyyy, hh:mm a')}">01 Jan 2026</dd>
+            </dl>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

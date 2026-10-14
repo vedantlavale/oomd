@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Appointments', active='appointments', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Appointments</h1>
+            <p class="page-subtitle">Book, reschedule and cancel service appointments.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/appointments/new}"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Book appointment</a>
+        </div>
+    </div>
+
+    <section class="panel"
+             th:with="base=@{/appointments(q=${q}, status=${status}, serviceId=${serviceId}, from=${from}, to=${to})}">
+        <form class="filter-bar" method="get" th:action="@{/appointments}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search</label>
+                <div class="search-field">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}"
+                           placeholder="Customer, phone or registration number" maxlength="100">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label for="status">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All statuses</option>
+                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == status}">Scheduled</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="serviceId">Service</label>
+                <select class="form-select" id="serviceId" name="serviceId">
+                    <option value="">All services</option>
+                    <option th:each="s : ${services}" th:value="${s.id}" th:text="${s.name}" th:selected="${s.id == serviceId}">Service</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="from">From date</label>
+                <input type="date" class="form-control" id="from" name="from" th:value="${from}">
+            </div>
+            <div class="filter-field">
+                <label for="to">To date</label>
+                <input type="date" class="form-control" id="to" name="to" th:value="${to}">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a class="btn btn-outline-secondary" th:href="@{/appointments}"
+                   th:if="${(q != null and !q.isBlank()) or status != null or serviceId != null or from != null or to != null}">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">Appointments</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Date and time</th>
+                    <th scope="col">Customer</th>
+                    <th scope="col">Vehicle</th>
+                    <th scope="col">Service</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="a : ${page.content}">
+                    <td class="cell-primary">
+                        <a th:href="@{/appointments/{id}(id=${a.id})}" th:text="${#temporals.format(a.appointmentDate, 'dd MMM yyyy')}">01 Jan 2026</a>
+                        <span class="cell-sub" th:text="${#temporals.format(a.appointmentTime, 'hh:mm a')}">09:00 AM</span>
+                    </td>
+                    <td><a th:href="@{/customers/{id}(id=${a.customer.id})}" th:text="${a.customer.name}">Customer</a>
+                        <span class="cell-sub" th:text="${a.customer.phone}">9876543210</span></td>
+                    <td><a th:href="@{/vehicles/{id}(id=${a.vehicle.id})}" th:text="${a.vehicle.registrationNumber}">MH12AB1234</a>
+                        <span class="cell-sub" th:text="${a.vehicle.manufacturer + ' ' + a.vehicle.model}">Maker Model</span></td>
+                    <td th:text="${a.serviceItem.name}">Service</td>
+                    <td><span th:replace="~{fragments/components :: badge(${a.status})}"></span></td>
+                    <td class="col-actions">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/appointments/{id}(id=${a.id})}"
+                           title="View appointment" th:attr="aria-label=${'View appointment of ' + a.customer.name}"><i class="bi bi-eye" aria-hidden="true"></i></a>
+                        <th:block th:if="${a.status.name() == 'SCHEDULED'}">
+                            <a class="btn btn-outline-secondary btn-row" th:href="@{/appointments/{id}/reschedule(id=${a.id})}"
+                               title="Reschedule" th:attr="aria-label=${'Reschedule appointment of ' + a.customer.name}"><i class="bi bi-calendar2-week" aria-hidden="true"></i></a>
+                            <form th:action="@{/appointments/{id}/cancel(id=${a.id})}" method="post"
+                                  data-confirm="Cancel this appointment? The time slot becomes free again."
+                                  data-confirm-title="Cancel appointment" data-confirm-label="Cancel appointment">
+                                <button type="submit" class="btn btn-outline-danger btn-row" title="Cancel appointment"
+                                        th:attr="aria-label=${'Cancel appointment of ' + a.customer.name}"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                            </form>
+                        </th:block>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${page.empty}"><div th:replace="~{fragments/components :: emptyState('bi-calendar-check', 'No appointments found', 'Adjust the filters or book a new appointment.')}"></div></th:block>
+
+        <div class="panel-footer">
+            <p th:replace="~{fragments/components :: resultSummary(${page})}"></p>
+            <nav th:replace="~{fragments/components :: pagination(${page}, ${base})}"></nav>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Create job card', active='jobs', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/appointments/' + ${appointment.id}, 'Back to appointment')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Create job card</h1>
+            <p class="page-subtitle">Opens the job for this appointment so a mechanic can start working.</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4 order-lg-2">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Appointment</h2></div>
+                <div class="panel-body">
+                    <dl class="detail-list" style="grid-template-columns: 6rem 1fr">
+                        <dt>Customer</dt><dd th:text="${appointment.customer.name}">Customer</dd>
+                        <dt>Vehicle</dt><dd><span class="fw-600" th:text="${appointment.vehicle.registrationNumber}">MH12AB1234</span>
+                            <span class="cell-sub" th:text="${appointment.vehicle.manufacturer + ' ' + appointment.vehicle.model}">Maker Model</span></dd>
+                        <dt>Service</dt><dd th:text="${appointment.serviceItem.name}">Service</dd>
+                        <dt>When</dt><dd th:text="${#temporals.format(appointment.appointmentDate, 'dd MMM yyyy') + ', ' + #temporals.format(appointment.appointmentTime, 'hh:mm a')}">01 Jan 2026</dd>
+                    </dl>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-8 order-lg-1">
+            <section class="panel">
+                <form th:object="${jobCreateForm}" th:action="@{/jobs}" method="post" class="panel-body" novalidate>
+                    <div th:replace="~{fragments/components :: formErrors}"></div>
+                    <input type="hidden" th:field="*{appointmentId}">
+                    <div class="invalid-feedback mb-2" th:errors="*{appointmentId}">Error</div>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label for="customerComplaint" class="form-label required">Customer complaint</label>
+                            <textarea class="form-control" id="customerComplaint" th:field="*{customerComplaint}" th:errorclass="is-invalid"
+                                      rows="4" required maxlength="1000"></textarea>
+                            <div class="invalid-feedback" th:errors="*{customerComplaint}">Error</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="laborCharge" class="form-label required">Labour charge</label>
+                            <div class="input-group">
+                                <span class="input-group-text" th:text="${@fmt.symbol()}">₹</span>
+                                <input type="number" class="form-control" id="laborCharge" th:field="*{laborCharge}" th:errorclass="is-invalid"
+                                       required min="0" step="0.01" inputmode="decimal" aria-describedby="laborHelp">
+                            </div>
+                            <div class="invalid-feedback" th:errors="*{laborCharge}">Error</div>
+                            <div class="form-text" id="laborHelp">Starts at the service's standard price; you can change it.</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="mechanicId" class="form-label">Assign mechanic (optional)</label>
+                            <select class="form-select" id="mechanicId" th:field="*{mechanicId}" th:errorclass="is-invalid">
+                                <option value="">Assign later</option>
+                                <option th:each="m : ${mechanics}" th:value="${m.id}" th:text="${m.displayName}">Mechanic</option>
+                            </select>
+                            <div class="invalid-feedback" th:errors="*{mechanicId}">Error</div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-clipboard-check me-1" aria-hidden="true"></i>Create job card</button>
+                        <a class="btn btn-outline-secondary" th:href="@{/appointments/{id}(id=${appointment.id})}">Cancel</a>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

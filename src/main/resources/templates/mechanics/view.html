@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=${details.mechanic.name}, active='mechanics', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="m=${details.mechanic}">
+    <a th:replace="~{fragments/components :: backLink('/mechanics', 'Back to mechanics')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title"><span th:text="${m.name}">Name</span>
+                <span th:replace="~{fragments/components :: activeBadge(${m.active})}"></span></h1>
+            <p class="page-subtitle" th:text="${m.specialization}">Specialization</p>
+        </div>
+        <div class="page-actions" sec:authorize="hasRole('ADMIN')">
+            <a class="btn btn-outline-secondary" th:href="@{/mechanics/{id}/edit(id=${m.id})}"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit</a>
+            <form th:if="${m.active}" th:action="@{/mechanics/{id}/deactivate(id=${m.id})}" method="post"
+                  th:attr="data-confirm=${'Deactivate ' + m.name + '? They will no longer be assignable to jobs and their login stops working.'}"
+                  data-confirm-title="Deactivate mechanic" data-confirm-label="Deactivate">
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-person-dash me-1" aria-hidden="true"></i>Deactivate</button>
+            </form>
+            <form th:unless="${m.active}" th:action="@{/mechanics/{id}/activate(id=${m.id})}" method="post">
+                <button type="submit" class="btn btn-outline-primary"><i class="bi bi-person-check me-1" aria-hidden="true"></i>Activate</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Details</h2></div>
+                <div class="panel-body">
+                    <dl class="detail-list" style="grid-template-columns: 8rem 1fr">
+                        <dt>Specialization</dt><dd th:text="${m.specialization}">Engine</dd>
+                        <dt>Phone</dt><dd th:text="${m.phone ?: 'Not provided'}">9876543210</dd>
+                        <dt>Open jobs</dt><dd class="fw-600" th:text="${details.openJobCount}">0</dd>
+                        <dt>Joined</dt><dd th:text="${#temporals.format(m.createdAt, 'dd MMM yyyy')}">01 Jan 2026</dd>
+                    </dl>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-8">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Recent jobs</h2></div>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(details.recentJobs)}">
+                    <table class="table table-vsms">
+                        <caption class="visually-hidden">Recent jobs assigned to this mechanic</caption>
+                        <thead><tr><th scope="col">Job card</th><th scope="col">Vehicle</th><th scope="col">Service</th><th scope="col">Status</th></tr></thead>
+                        <tbody>
+                        <tr th:each="j : ${details.recentJobs}">
+                            <td class="cell-primary"><a th:href="@{/jobs/{id}(id=${j.id})}" th:text="${j.jobNumber}">JC-000001</a></td>
+                            <td th:text="${j.vehicle.registrationNumber}">MH12AB1234</td>
+                            <td th:text="${j.serviceItem.name}">Service</td>
+                            <td><span th:replace="~{fragments/components :: badge(${j.status})}"></span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <th:block th:if="${#lists.isEmpty(details.recentJobs)}"><div th:replace="~{fragments/components :: emptyState('bi-wrench-adjustable', 'No jobs yet', 'Jobs assigned to this mechanic will appear here.')}"></div></th:block>
+            </section>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

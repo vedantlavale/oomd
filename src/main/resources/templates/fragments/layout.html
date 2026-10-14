@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<!--/*
+    Main application shell. Pages use it like this:
+
+    <html th:replace="~{fragments/layout :: layout(title='Customers', active='customers', content=~{::content})}">
+    <body><th:block th:fragment="content"> ...page markup... </th:block></body></html>
+*/-->
+<html lang="en" th:fragment="layout(title, active, content)"
+      xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1f3a">
+    <title th:text="${title} + ' · VSMS'">VSMS</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/vsms.css}">
+</head>
+<body class="app-body">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<div class="app-shell">
+
+    <!-- ===== Sidebar ===== -->
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+        <a class="sidebar-brand" th:href="@{/}">
+            <span class="brand-mark" aria-hidden="true"><i class="bi bi-gear-wide-connected"></i></span>
+            <span class="brand-text">
+                <strong>VSMS</strong>
+                <small>Vehicle Service Management</small>
+            </span>
+        </a>
+
+        <nav class="sidebar-nav">
+            <ul class="nav-list">
+                <li th:replace="~{fragments/components :: navItem('dashboard', '/', 'bi-speedometer2', 'Dashboard')}"></li>
+            </ul>
+
+            <div sec:authorize="hasAnyRole('ADMIN','SERVICE_ADVISOR')">
+                <p class="nav-heading">Operations</p>
+                <ul class="nav-list">
+                    <li th:replace="~{fragments/components :: navItem('appointments', '/appointments', 'bi-calendar-check', 'Appointments')}"></li>
+                    <li th:replace="~{fragments/components :: navItem('jobs', '/jobs', 'bi-wrench-adjustable', 'Service Jobs')}"></li>
+                    <li th:replace="~{fragments/components :: navItem('customers', '/customers', 'bi-people', 'Customers')}"></li>
+                    <li th:replace="~{fragments/components :: navItem('vehicles', '/vehicles', 'bi-car-front', 'Vehicles')}"></li>
+                </ul>
+                <p class="nav-heading">Workshop</p>
+                <ul class="nav-list">
+                    <li th:replace="~{fragments/components :: navItem('mechanics', '/mechanics', 'bi-person-gear', 'Mechanics')}"></li>
+                    <li th:replace="~{fragments/components :: navItem('catalog', '/catalog', 'bi-tags', 'Service Catalog')}"></li>
+                    <li th:replace="~{fragments/components :: navItem('parts', '/parts', 'bi-boxes', 'Spare Parts')}"></li>
+                </ul>
+                <p class="nav-heading">Billing</p>
+                <ul class="nav-list">
+                    <li th:replace="~{fragments/components :: navItem('invoices', '/invoices', 'bi-receipt', 'Invoices')}"></li>
+                    <li th:replace="~{fragments/components :: navItem('payments', '/payments', 'bi-cash-coin', 'Payments')}"></li>
+                </ul>
+                <p class="nav-heading">Insights</p>
+                <ul class="nav-list">
+                    <li th:replace="~{fragments/components :: navItem('reports', '/reports', 'bi-bar-chart-line', 'Reports')}"></li>
+                </ul>
+            </div>
+
+            <div sec:authorize="hasRole('MECHANIC')">
+                <p class="nav-heading">My work</p>
+                <ul class="nav-list">
+                    <li th:replace="~{fragments/components :: navItem('jobs', '/jobs', 'bi-wrench-adjustable', 'My Jobs')}"></li>
+                    <li th:replace="~{fragments/components :: navItem('parts', '/parts', 'bi-boxes', 'Spare Parts')}"></li>
+                </ul>
+            </div>
+
+            <div sec:authorize="hasRole('ADMIN')">
+                <p class="nav-heading">Administration</p>
+                <ul class="nav-list">
+                    <li th:replace="~{fragments/components :: navItem('users', '/users', 'bi-shield-lock', 'Users')}"></li>
+                </ul>
+            </div>
+        </nav>
+
+        <div class="sidebar-footer">
+            <span th:text="${business.name}">Service Center</span>
+        </div>
+    </aside>
+    <div class="sidebar-backdrop" id="sidebarBackdrop" aria-hidden="true"></div>
+
+    <!-- ===== Main column ===== -->
+    <div class="app-main">
+        <header class="topbar">
+            <button type="button" class="btn btn-icon topbar-toggle" id="sidebarToggle"
+                    aria-controls="sidebar" aria-expanded="false" aria-label="Open navigation menu">
+                <i class="bi bi-list" aria-hidden="true"></i>
+            </button>
+            <div class="topbar-title d-none d-sm-block" th:text="${business.name}">Service Center</div>
+            <div class="topbar-spacer"></div>
+            <div class="topbar-date d-none d-md-block"
+                 th:text="${#temporals.format(#temporals.createToday(), 'EEEE, dd MMM yyyy')}">Today</div>
+
+            <div class="dropdown" th:if="${currentUser != null}">
+                <button class="btn user-menu" type="button" id="userMenu" data-bs-toggle="dropdown"
+                        aria-expanded="false" aria-label="Account menu">
+                    <span class="avatar" aria-hidden="true"
+                          th:text="${#strings.toUpperCase(#strings.substring(currentUser.fullName, 0, 1))}">A</span>
+                    <span class="user-meta d-none d-sm-flex">
+                        <strong th:text="${currentUser.fullName}">Name</strong>
+                        <small th:text="${currentUser.role.label}">Role</small>
+                    </span>
+                    <i class="bi bi-chevron-down small" aria-hidden="true"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                    <li class="dropdown-header" th:text="${'Signed in as ' + currentUser.username}">Signed in</li>
+                    <li><a class="dropdown-item" th:href="@{/account/password}">
+                        <i class="bi bi-key me-2" aria-hidden="true"></i>Change password</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <form th:action="@{/logout}" method="post">
+                            <button type="submit" class="dropdown-item">
+                                <i class="bi bi-box-arrow-right me-2" aria-hidden="true"></i>Sign out</button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </header>
+
+        <main id="main-content" class="content" tabindex="-1">
+            <div th:replace="~{fragments/components :: alerts}"></div>
+            <th:block th:replace="${content}">Page content</th:block>
+        </main>
+
+        <footer class="app-footer">
+            <span>&copy; <span th:text="${#temporals.year(#temporals.createToday())}">2026</span>
+                <span th:text="${business.name}">Service Center</span></span>
+            <span>Vehicle Service Management System</span>
+        </footer>
+    </div>
+</div>
+
+<!-- Reusable confirmation dialog (used by every form that has a data-confirm attribute) -->
+<div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title fs-5" id="confirmModalTitle">Please confirm</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="confirmModalBody">Are you sure?</div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmModalOk">Confirm</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/vsms.js}"></script>
+</body>
+</html>

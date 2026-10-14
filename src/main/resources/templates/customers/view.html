@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=${details.customer.name}, active='customers', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="c=${details.customer}">
+    <a th:replace="~{fragments/components :: backLink('/customers', 'Back to customers')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${c.name}">Customer</h1>
+            <p class="page-subtitle">Customer since <span th:text="${#temporals.format(c.createdAt, 'dd MMM yyyy')}">01 Jan 2026</span></p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/appointments/new(customerId=${c.id})}"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Book appointment</a>
+            <a class="btn btn-outline-secondary" th:href="@{/vehicles/new(customerId=${c.id})}"><i class="bi bi-car-front me-1" aria-hidden="true"></i>Add vehicle</a>
+            <a class="btn btn-outline-secondary" th:href="@{/customers/{id}/edit(id=${c.id})}"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit</a>
+            <form sec:authorize="hasRole('ADMIN')" th:action="@{/customers/{id}/delete(id=${c.id})}" method="post"
+                  th:attr="data-confirm=${'Delete customer ' + c.name + '? This cannot be undone.'}"
+                  data-confirm-title="Delete customer" data-confirm-label="Delete">
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Contact details</h2></div>
+                <div class="panel-body">
+                    <dl class="detail-list" style="grid-template-columns: 6rem 1fr">
+                        <dt>Phone</dt><dd><a th:href="${'tel:' + c.phone}" th:text="${c.phone}">9876543210</a></dd>
+                        <dt>Email</dt>
+                        <dd><a th:if="${c.email}" th:href="${'mailto:' + c.email}" th:text="${c.email}">a@b.c</a>
+                            <span th:unless="${c.email}" class="text-muted">Not provided</span></dd>
+                        <dt>Address</dt>
+                        <dd><span th:if="${c.address}" th:text="${c.address}">Address</span>
+                            <span th:unless="${c.address}" class="text-muted">Not provided</span></dd>
+                    </dl>
+                    <p class="form-text mt-3 mb-0" th:unless="${details.deletable}">
+                        This customer has <span th:text="${#lists.size(details.vehicles)}">0</span> vehicle(s) and
+                        <span th:text="${details.appointmentCount}">0</span> appointment(s), so it cannot be deleted.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-lg-8">
+            <section class="panel">
+                <div class="panel-header">
+                    <h2 class="panel-title">Vehicles</h2>
+                    <a class="btn btn-outline-secondary btn-sm" th:href="@{/vehicles/new(customerId=${c.id})}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add vehicle</a>
+                </div>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(details.vehicles)}">
+                    <table class="table table-vsms">
+                        <caption class="visually-hidden">Vehicles owned by this customer</caption>
+                        <thead><tr><th scope="col">Registration</th><th scope="col">Vehicle</th><th scope="col">Year</th><th scope="col">Fuel</th></tr></thead>
+                        <tbody>
+                        <tr th:each="v : ${details.vehicles}">
+                            <td class="cell-primary"><a th:href="@{/vehicles/{id}(id=${v.id})}" th:text="${v.registrationNumber}">MH12AB1234</a></td>
+                            <td th:text="${v.manufacturer + ' ' + v.model}">Maker Model</td>
+                            <td th:text="${v.manufacturingYear}">2020</td>
+                            <td th:text="${v.fuelType.label}">Petrol</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <th:block th:if="${#lists.isEmpty(details.vehicles)}"><div th:replace="~{fragments/components :: emptyState('bi-car-front', 'No vehicles yet', 'Register a vehicle for this customer to book appointments.')}"></div></th:block>
+            </section>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

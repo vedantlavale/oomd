@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title='Vehicles', active='vehicles', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Vehicles</h1>
+            <p class="page-subtitle">Registered vehicles and their owners.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/vehicles/new}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Register vehicle</a>
+        </div>
+    </div>
+
+    <section class="panel" th:with="base=@{/vehicles(q=${q})}">
+        <form class="filter-bar" method="get" th:action="@{/vehicles}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search by registration number</label>
+                <div class="search-field">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}"
+                           placeholder="Registration number, owner, make or model" maxlength="100">
+                </div>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Search</button>
+                <a class="btn btn-outline-secondary" th:href="@{/vehicles}" th:if="${q != null and !q.isBlank()}">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">List of vehicles</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Registration</th>
+                    <th scope="col">Vehicle</th>
+                    <th scope="col">Year</th>
+                    <th scope="col">Fuel</th>
+                    <th scope="col">Owner</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="v : ${page.content}">
+                    <td class="cell-primary"><a th:href="@{/vehicles/{id}(id=${v.id})}" th:text="${v.registrationNumber}">MH12AB1234</a></td>
+                    <td th:text="${v.manufacturer + ' ' + v.model}">Maker Model</td>
+                    <td th:text="${v.manufacturingYear}">2020</td>
+                    <td th:text="${v.fuelType.label}">Petrol</td>
+                    <td><a th:href="@{/customers/{id}(id=${v.customer.id})}" th:text="${v.customer.name}">Owner</a></td>
+                    <td class="col-actions">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/vehicles/{id}(id=${v.id})}"
+                           th:title="${'View ' + v.registrationNumber}" th:attr="aria-label=${'View ' + v.registrationNumber}"><i class="bi bi-eye" aria-hidden="true"></i></a>
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/vehicles/{id}/edit(id=${v.id})}"
+                           th:title="${'Edit ' + v.registrationNumber}" th:attr="aria-label=${'Edit ' + v.registrationNumber}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/vehicles/{id}/delete(id=${v.id})}" method="post"
+                              th:attr="data-confirm=${'Delete vehicle ' + v.registrationNumber + '? This cannot be undone.'}"
+                              data-confirm-title="Delete vehicle" data-confirm-label="Delete">
+                            <button type="submit" class="btn btn-outline-danger btn-row"
+                                    th:title="${'Delete ' + v.registrationNumber}" th:attr="aria-label=${'Delete ' + v.registrationNumber}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${page.empty}"><div th:replace="~{fragments/components :: emptyState('bi-car-front', 'No vehicles found', ${q != null and !q.isBlank()} ? 'Try a different registration number or name.' : 'Register the first vehicle to get started.')}"></div></th:block>
+
+        <div class="panel-footer">
+            <p th:replace="~{fragments/components :: resultSummary(${page})}"></p>
+            <nav th:replace="~{fragments/components :: pagination(${page}, ${base})}"></nav>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

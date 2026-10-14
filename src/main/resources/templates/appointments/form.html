@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Book appointment', active='appointments', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/appointments', 'Back to appointments')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Book appointment</h1>
+            <p class="page-subtitle">One active appointment per service and time slot; a vehicle cannot be booked twice at the same time.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${appointmentForm}" th:action="@{/appointments}" method="post" class="panel-body" novalidate
+              th:attr="data-slots-url=@{/appointments/slots}">
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="customerId" class="form-label required">Customer</label>
+                    <select class="form-select" id="customerId" th:field="*{customerId}" th:errorclass="is-invalid" required>
+                        <option value="">Choose a customer…</option>
+                        <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name + ' · ' + c.phone}">Customer</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{customerId}">Error</div>
+                    <div class="form-text">New customer? <a th:href="@{/customers/new}">Add them first</a>.</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="vehicleId" class="form-label required">Vehicle</label>
+                    <select class="form-select" id="vehicleId" th:field="*{vehicleId}" th:errorclass="is-invalid" required data-depends-on="customerId">
+                        <option value="">Choose a vehicle…</option>
+                        <option th:each="v : ${vehicles}" th:value="${v.id}" th:attr="data-parent=${v.customer.id}"
+                                th:text="${v.registrationNumber + ' · ' + v.manufacturer + ' ' + v.model}">Vehicle</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{vehicleId}">Error</div>
+                    <div class="form-text">Shows the chosen customer's vehicles. <a th:href="@{/vehicles/new}">Register a vehicle</a>.</div>
+                </div>
+                <div class="col-12">
+                    <label for="serviceItemId" class="form-label required">Requested service</label>
+                    <select class="form-select" id="serviceItemId" th:field="*{serviceItemId}" th:errorclass="is-invalid" required>
+                        <option value="">Choose a service…</option>
+                        <option th:each="s : ${services}" th:value="${s.id}" th:text="${s.name + ' — ' + @fmt.money(s.standardPrice)}">Service</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{serviceItemId}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="appointmentDate" class="form-label required">Date</label>
+                    <input type="date" class="form-control" id="appointmentDate" th:field="*{appointmentDate}" th:errorclass="is-invalid"
+                           required th:min="${minDate}" th:max="${maxDate}">
+                    <div class="invalid-feedback" th:errors="*{appointmentDate}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="appointmentTime" class="form-label required">Time slot</label>
+                    <select class="form-select" id="appointmentTime" th:field="*{appointmentTime}" th:errorclass="is-invalid" required>
+                        <option value="">Choose a time…</option>
+                        <option th:each="t : ${timeSlots}" th:value="${#temporals.format(t, 'HH:mm')}"
+                                th:text="${#temporals.format(t, 'hh:mm a')}">09:00 AM</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{appointmentTime}">Error</div>
+                    <div class="form-text" id="slotHelp">Slots already booked for the chosen service and date are disabled.</div>
+                </div>
+                <div class="col-12">
+                    <label for="notes" class="form-label">Notes or problem description</label>
+                    <textarea class="form-control" id="notes" th:field="*{notes}" th:errorclass="is-invalid" rows="3" maxlength="500"
+                              placeholder="What does the customer want checked or fixed?"></textarea>
+                    <div class="invalid-feedback" th:errors="*{notes}">Error</div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-calendar-check me-1" aria-hidden="true"></i>Book appointment</button>
+                <a class="btn btn-outline-secondary" th:href="@{/appointments}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

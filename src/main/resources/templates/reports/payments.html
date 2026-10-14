@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Payment history', active='reports', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reports</h1>
+            <p class="page-subtitle">Payment history with totals for the chosen period.</p>
+        </div>
+        <div class="page-actions">
+            <button type="button" class="btn btn-outline-secondary" data-print><i class="bi bi-printer me-1" aria-hidden="true"></i>Print</button>
+        </div>
+    </div>
+    <nav th:replace="~{fragments/components :: reportTabs('payments')}"></nav>
+    <div th:replace="~{fragments/components :: printHeading('Payment history', ${from}, ${to})}"></div>
+    <div class="alert alert-warning" role="status" th:if="${warning}">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><div class="alert-text" th:text="${warning}">Warning</div>
+    </div>
+
+    <section class="panel">
+        <form class="filter-bar" method="get" th:action="@{/reports/payments}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search</label>
+                <div class="search-field"><i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}" placeholder="Customer, registration number, invoice number or reference" maxlength="100"></div>
+            </div>
+            <div class="filter-field">
+                <label for="method">Method</label>
+                <select class="form-select" id="method" name="method">
+                    <option value="">All methods</option>
+                    <option th:each="m : ${methods}" th:value="${m}" th:text="${m.label}" th:selected="${m == method}">Cash</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="status">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All</option>
+                    <option th:each="s : ${recordStatuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == status}">Successful</option>
+                </select>
+            </div>
+            <div class="filter-field"><label for="from">Paid from</label><input type="date" class="form-control" id="from" name="from" th:value="${from}"></div>
+            <div class="filter-field"><label for="to">Paid to</label><input type="date" class="form-control" id="to" name="to" th:value="${to}"></div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Run report</button>
+                <a class="btn btn-outline-secondary" th:href="@{/reports/payments}">Reset</a>
+            </div>
+        </form>
+
+        <div class="panel-body border-bottom">
+            <strong th:text="${report.total}">0</strong> payment(s) ·
+            collected <strong th:text="${@fmt.money(report.collected)}">₹0.00</strong> ·
+            reversed <strong th:text="${@fmt.money(report.reversed)}">₹0.00</strong>
+            <p class="form-text mb-0 mt-2" th:if="${report.truncated}" th:text="${'Showing the first ' + limit + ' rows (totals cover those rows). Narrow the filters to see the rest.'}">Truncated</p>
+        </div>
+
+        <div class="table-responsive" th:unless="${#lists.isEmpty(report.rows)}">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">Payments matching the filters</caption>
+                <thead><tr><th scope="col">Receipt</th><th scope="col">Paid on</th><th scope="col">Invoice</th><th scope="col">Customer</th><th scope="col">Method</th>
+                    <th scope="col" class="num">Amount</th><th scope="col">Status</th></tr></thead>
+                <tbody>
+                <tr th:each="p : ${report.rows}" th:classappend="${p.status.name() == 'REVERSED'} ? 'row-muted'">
+                    <td class="cell-primary"><a th:href="@{/payments/{id}(id=${p.id})}" th:text="${p.receiptNumber}">PAY-000001</a></td>
+                    <td th:text="${#temporals.format(p.paidAt, 'dd MMM yyyy, hh:mm a')}">01 Jan 2026</td>
+                    <td><a th:href="@{/invoices/{id}(id=${p.invoice.id})}" th:text="${p.invoice.invoiceNumber}">INV-000001</a></td>
+                    <td th:text="${p.invoice.serviceJob.customer.name}">Customer</td>
+                    <td th:text="${p.method.label}">Cash</td>
+                    <td class="num" th:text="${@fmt.money(p.amount)}">₹0.00</td>
+                    <td><span th:replace="~{fragments/components :: badge(${p.status})}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${#lists.isEmpty(report.rows)}"><div th:replace="~{fragments/components :: emptyState('bi-cash-coin', 'No payments match', 'Try different filters.')}"></div></th:block>
+    </section>
+</th:block>
+</body>
+</html>

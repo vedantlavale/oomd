@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title=${mechanic == null ? 'Add mechanic' : 'Edit mechanic'}, active='mechanics', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink(${mechanic == null ? '/mechanics' : '/mechanics/' + mechanic.id}, ${mechanic == null ? 'Back to mechanics' : 'Back to mechanic'})}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${mechanic == null ? 'Add mechanic' : 'Edit mechanic'}">Add mechanic</h1>
+            <p class="page-subtitle">Fields marked with * are required.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${mechanicForm}" th:action="${mechanic == null} ? @{/mechanics} : @{/mechanics/{id}(id=${mechanic.id})}"
+              method="post" class="panel-body" novalidate>
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="name" class="form-label required">Name</label>
+                    <input type="text" class="form-control" id="name" th:field="*{name}" th:errorclass="is-invalid" required maxlength="100" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{name}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="specialization" class="form-label required">Specialization</label>
+                    <input type="text" class="form-control" id="specialization" th:field="*{specialization}" th:errorclass="is-invalid"
+                           required maxlength="100" placeholder="e.g. Engine, Brakes, AC" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{specialization}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="phone" class="form-label">Phone</label>
+                    <input type="tel" class="form-control" id="phone" th:field="*{phone}" th:errorclass="is-invalid"
+                           maxlength="20" inputmode="tel" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{phone}">Error</div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                    <span th:text="${mechanic == null ? 'Save mechanic' : 'Save changes'}">Save</span></button>
+                <a class="btn btn-outline-secondary" th:href="${mechanic == null} ? @{/mechanics} : @{/mechanics/{id}(id=${mechanic.id})}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

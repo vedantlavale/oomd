@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title=${part == null ? 'Add spare part' : 'Edit spare part'}, active='parts', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/parts', 'Back to spare parts')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${part == null ? 'Add spare part' : 'Edit spare part'}">Add spare part</h1>
+            <p class="page-subtitle">Price changes only affect future jobs. Parts already used keep the price they were charged at.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${sparePartForm}" th:action="${part == null} ? @{/parts} : @{/parts/{id}(id=${part.id})}"
+              method="post" class="panel-body" novalidate>
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label for="sku" class="form-label required">SKU</label>
+                    <input type="text" class="form-control text-uppercase" id="sku" th:field="*{sku}" th:errorclass="is-invalid"
+                           required maxlength="40" placeholder="e.g. OIL-5W30-1L" autocomplete="off" spellcheck="false">
+                    <div class="invalid-feedback" th:errors="*{sku}">Error</div>
+                </div>
+                <div class="col-md-8">
+                    <label for="name" class="form-label required">Part name</label>
+                    <input type="text" class="form-control" id="name" th:field="*{name}" th:errorclass="is-invalid" required maxlength="120" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{name}">Error</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="unitPrice" class="form-label required">Unit price</label>
+                    <div class="input-group">
+                        <span class="input-group-text" th:text="${@fmt.symbol()}">₹</span>
+                        <input type="number" class="form-control" id="unitPrice" th:field="*{unitPrice}" th:errorclass="is-invalid"
+                               required min="0" step="0.01" inputmode="decimal">
+                    </div>
+                    <div class="invalid-feedback" th:errors="*{unitPrice}">Error</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="stockQuantity" class="form-label required">Stock quantity</label>
+                    <input type="number" class="form-control" id="stockQuantity" th:field="*{stockQuantity}" th:errorclass="is-invalid"
+                           required min="0" step="1" inputmode="numeric">
+                    <div class="invalid-feedback" th:errors="*{stockQuantity}">Error</div>
+                </div>
+                <div class="col-md-4">
+                    <label for="reorderLevel" class="form-label required">Low-stock level</label>
+                    <input type="number" class="form-control" id="reorderLevel" th:field="*{reorderLevel}" th:errorclass="is-invalid"
+                           required min="0" step="1" inputmode="numeric" aria-describedby="reorderHelp">
+                    <div class="invalid-feedback" th:errors="*{reorderLevel}">Error</div>
+                    <div class="form-text" id="reorderHelp">Shown as "low" at or below this quantity.</div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>
+                    <span th:text="${part == null ? 'Save part' : 'Save changes'}">Save</span></button>
+                <a class="btn btn-outline-secondary" th:href="@{/parts}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

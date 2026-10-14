@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Revenue report', active='reports', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reports</h1>
+            <p class="page-subtitle">Revenue is counted from successful payments; reversed payments are excluded.</p>
+        </div>
+        <div class="page-actions">
+            <button type="button" class="btn btn-outline-secondary" data-print><i class="bi bi-printer me-1" aria-hidden="true"></i>Print</button>
+        </div>
+    </div>
+    <nav th:replace="~{fragments/components :: reportTabs('revenue')}"></nav>
+
+    <div class="alert alert-warning" role="status" th:if="${warning}">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><div class="alert-text" th:text="${warning}">Warning</div>
+    </div>
+
+    <section class="panel mb-4">
+        <form class="filter-bar" method="get" th:action="@{/reports}">
+            <div class="filter-field">
+                <label for="from">From</label>
+                <input type="date" class="form-control" id="from" name="from" th:value="${from}" required>
+            </div>
+            <div class="filter-field">
+                <label for="to">To</label>
+                <input type="date" class="form-control" id="to" name="to" th:value="${to}" required>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Show summary</button>
+                <a class="btn btn-outline-secondary" th:href="@{/reports}">This month</a>
+            </div>
+        </form>
+    </section>
+
+    <div th:replace="~{fragments/components :: printHeading('Revenue summary', ${summary.from}, ${summary.to})}"></div>
+
+    <div class="kpi-grid cols-3">
+        <div class="kpi">
+            <span class="kpi-icon"><i class="bi bi-cash-stack" aria-hidden="true"></i></span>
+            <span><span class="kpi-value d-block" th:text="${@fmt.money(summary.collected)}">₹0.00</span><span class="kpi-label">Collected</span>
+                <span class="kpi-note d-block" th:text="${summary.paymentCount + ' payment(s)'}">0 payments</span></span>
+        </div>
+        <div class="kpi">
+            <span class="kpi-icon"><i class="bi bi-receipt" aria-hidden="true"></i></span>
+            <span><span class="kpi-value d-block" th:text="${@fmt.money(summary.invoiced)}">₹0.00</span><span class="kpi-label">Invoiced</span>
+                <span class="kpi-note d-block" th:text="${summary.invoiceCount + ' invoice(s) issued'}">0 invoices</span></span>
+        </div>
+        <div class="kpi">
+            <span class="kpi-icon"><i class="bi bi-hourglass-split" aria-hidden="true"></i></span>
+            <span><span class="kpi-value d-block" th:text="${@fmt.money(summary.outstandingNow)}">₹0.00</span><span class="kpi-label">Outstanding today</span>
+                <span class="kpi-note d-block" th:text="${summary.unpaidInvoicesNow + ' open invoice(s), all dates'}">0</span></span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <section class="panel h-100">
+                <div class="panel-header"><h2 class="panel-title">Collected by payment method</h2></div>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(summary.byMethod)}">
+                    <table class="table table-vsms">
+                        <caption class="visually-hidden">Revenue by payment method</caption>
+                        <thead><tr><th scope="col">Method</th><th scope="col" class="num">Payments</th><th scope="col" class="num">Amount</th><th scope="col" class="num">Share</th></tr></thead>
+                        <tbody>
+                        <tr th:each="m : ${summary.byMethod}">
+                            <td class="cell-primary" th:text="${m.method.label}">Cash</td>
+                            <td class="num" th:text="${m.count}">1</td>
+                            <td class="num" th:text="${@fmt.money(m.total)}">₹0.00</td>
+                            <td class="num" th:text="${@fmt.percent(m.total, summary.collected)}">0%</td>
+                        </tr>
+                        </tbody>
+                        <tfoot><tr><td>Total</td><td class="num" th:text="${summary.paymentCount}">0</td><td class="num" th:text="${@fmt.money(summary.collected)}">₹0.00</td><td></td></tr></tfoot>
+                    </table>
+                </div>
+                <th:block th:if="${#lists.isEmpty(summary.byMethod)}"><div th:replace="~{fragments/components :: emptyState('bi-cash-coin', 'No payments in this period', null)}"></div></th:block>
+            </section>
+        </div>
+        <div class="col-lg-7">
+            <section class="panel h-100">
+                <div class="panel-header"><h2 class="panel-title">Collected per day</h2></div>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(summary.byDay)}">
+                    <table class="table table-vsms">
+                        <caption class="visually-hidden">Revenue per day</caption>
+                        <thead><tr><th scope="col">Date</th><th scope="col" class="num">Payments</th><th scope="col" class="num">Amount</th></tr></thead>
+                        <tbody>
+                        <tr th:each="d : ${summary.byDay}">
+                            <td class="cell-primary" th:text="${#temporals.format(d.date, 'EEE, dd MMM yyyy')}">Mon, 01 Jan 2026</td>
+                            <td class="num" th:text="${d.count}">1</td>
+                            <td class="num" th:text="${@fmt.money(d.total)}">₹0.00</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <th:block th:if="${#lists.isEmpty(summary.byDay)}"><div th:replace="~{fragments/components :: emptyState('bi-calendar-x', 'No payments in this period', 'Try a wider date range.')}"></div></th:block>
+            </section>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

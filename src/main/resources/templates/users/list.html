@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Users', active='users', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Users</h1>
+            <p class="page-subtitle">Login accounts for administrators, service advisors and mechanics.</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/users/new}"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Add user</a>
+        </div>
+    </div>
+
+    <section class="panel">
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">User accounts</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Username</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Linked mechanic</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="u : ${users}" th:classappend="${!u.enabled} ? 'row-muted'">
+                    <td class="cell-primary" th:text="${u.username}">admin</td>
+                    <td th:text="${u.fullName}">Name</td>
+                    <td th:text="${u.role.label}">Administrator</td>
+                    <td th:text="${u.mechanic != null ? u.mechanic.name : '-'}">-</td>
+                    <td><span th:replace="~{fragments/components :: activeBadge(${u.enabled})}"></span></td>
+                    <td class="col-actions">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/users/{id}/edit(id=${u.id})}"
+                           th:title="${'Edit ' + u.username}" th:attr="aria-label=${'Edit ' + u.username}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/users/{id}/password(id=${u.id})}"
+                           th:title="${'Reset password of ' + u.username}" th:attr="aria-label=${'Reset password of ' + u.username}"><i class="bi bi-key" aria-hidden="true"></i></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="panel-footer">
+            <p class="result-summary mb-0"><span th:text="${#lists.size(users)}">1</span> account(s). Accounts are disabled rather than deleted so history stays correct.</p>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

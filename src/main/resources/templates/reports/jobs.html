@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Service job history', active='reports', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reports</h1>
+            <p class="page-subtitle">Service job history by creation date, status and mechanic.</p>
+        </div>
+        <div class="page-actions">
+            <button type="button" class="btn btn-outline-secondary" data-print><i class="bi bi-printer me-1" aria-hidden="true"></i>Print</button>
+        </div>
+    </div>
+    <nav th:replace="~{fragments/components :: reportTabs('jobs')}"></nav>
+    <div th:replace="~{fragments/components :: printHeading('Service job history', ${from}, ${to})}"></div>
+    <div class="alert alert-warning" role="status" th:if="${warning}">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i><div class="alert-text" th:text="${warning}">Warning</div>
+    </div>
+
+    <section class="panel">
+        <form class="filter-bar" method="get" th:action="@{/reports/jobs}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search</label>
+                <div class="search-field"><i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}" placeholder="Job number, customer or registration number" maxlength="100"></div>
+            </div>
+            <div class="filter-field">
+                <label for="status">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All statuses</option>
+                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == status}">Created</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="mechanicId">Mechanic</label>
+                <select class="form-select" id="mechanicId" name="mechanicId">
+                    <option value="">Any mechanic</option>
+                    <option th:each="m : ${mechanics}" th:value="${m.id}" th:text="${m.name}" th:selected="${m.id == mechanicId}">Mechanic</option>
+                </select>
+            </div>
+            <div class="filter-field"><label for="from">Created from</label><input type="date" class="form-control" id="from" name="from" th:value="${from}"></div>
+            <div class="filter-field"><label for="to">Created to</label><input type="date" class="form-control" id="to" name="to" th:value="${to}"></div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Run report</button>
+                <a class="btn btn-outline-secondary" th:href="@{/reports/jobs}">Reset</a>
+            </div>
+        </form>
+
+        <div class="panel-body border-bottom">
+            <strong th:text="${report.total}">0</strong> job(s)
+            <span class="ms-2" th:each="entry : ${report.byStatus}">
+                <span th:replace="~{fragments/components :: badge(${entry.key})}"></span> <span th:text="${entry.value}">1</span>
+            </span>
+            <p class="form-text mb-0 mt-2" th:if="${report.truncated}" th:text="${'Showing the first ' + limit + ' rows. Narrow the filters to see the rest.'}">Truncated</p>
+        </div>
+
+        <div class="table-responsive" th:unless="${#lists.isEmpty(report.rows)}">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">Service jobs matching the filters</caption>
+                <thead><tr><th scope="col">Job card</th><th scope="col">Created</th><th scope="col">Customer</th><th scope="col">Vehicle</th><th scope="col">Service</th><th scope="col">Mechanic</th><th scope="col">Status</th></tr></thead>
+                <tbody>
+                <tr th:each="j : ${report.rows}">
+                    <td class="cell-primary"><a th:href="@{/jobs/{id}(id=${j.id})}" th:text="${j.jobNumber}">JC-000001</a></td>
+                    <td th:text="${#temporals.format(j.createdAt, 'dd MMM yyyy')}">01 Jan 2026</td>
+                    <td th:text="${j.customer.name}">Customer</td>
+                    <td th:text="${j.vehicle.registrationNumber}">MH12AB1234</td>
+                    <td th:text="${j.serviceItem.name}">Service</td>
+                    <td th:text="${j.mechanic != null ? j.mechanic.name : '-'}">Mechanic</td>
+                    <td><span th:replace="~{fragments/components :: badge(${j.status})}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${#lists.isEmpty(report.rows)}"><div th:replace="~{fragments/components :: emptyState('bi-wrench-adjustable', 'No jobs match', 'Try different filters.')}"></div></th:block>
+    </section>
+</th:block>
+</body>
+</html>

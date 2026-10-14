@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title='Mechanics', active='mechanics', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Mechanics</h1>
+            <p class="page-subtitle">The technicians who carry out service jobs.</p>
+        </div>
+        <div class="page-actions" sec:authorize="hasRole('ADMIN')">
+            <a class="btn btn-primary" th:href="@{/mechanics/new}"><i class="bi bi-person-plus me-1" aria-hidden="true"></i>Add mechanic</a>
+        </div>
+    </div>
+
+    <section class="panel" th:with="base=@{/mechanics(q=${q}, status=${status})}">
+        <form class="filter-bar" method="get" th:action="@{/mechanics}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search mechanics</label>
+                <div class="search-field">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}" placeholder="Name or specialization" maxlength="100">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label for="status">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All</option>
+                    <option value="active" th:selected="${status == 'active'}">Active</option>
+                    <option value="inactive" th:selected="${status == 'inactive'}">Inactive</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a class="btn btn-outline-secondary" th:href="@{/mechanics}" th:if="${(q != null and !q.isBlank()) or (status != null and !status.isBlank())}">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">List of mechanics</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Mechanic</th>
+                    <th scope="col">Specialization</th>
+                    <th scope="col">Phone</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="m : ${page.content}" th:classappend="${!m.active} ? 'row-muted'">
+                    <td class="cell-primary"><a th:href="@{/mechanics/{id}(id=${m.id})}" th:text="${m.name}">Name</a></td>
+                    <td th:text="${m.specialization}">Engine</td>
+                    <td th:text="${m.phone ?: '-'}">9876543210</td>
+                    <td><span th:replace="~{fragments/components :: activeBadge(${m.active})}"></span></td>
+                    <td class="col-actions">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/mechanics/{id}(id=${m.id})}"
+                           th:title="${'View ' + m.name}" th:attr="aria-label=${'View ' + m.name}"><i class="bi bi-eye" aria-hidden="true"></i></a>
+                        <th:block sec:authorize="hasRole('ADMIN')">
+                            <a class="btn btn-outline-secondary btn-row" th:href="@{/mechanics/{id}/edit(id=${m.id})}"
+                               th:title="${'Edit ' + m.name}" th:attr="aria-label=${'Edit ' + m.name}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                            <form th:if="${m.active}" th:action="@{/mechanics/{id}/deactivate(id=${m.id})}" method="post"
+                                  th:attr="data-confirm=${'Deactivate ' + m.name + '? They will no longer be assignable to jobs and their login stops working.'}"
+                                  data-confirm-title="Deactivate mechanic" data-confirm-label="Deactivate">
+                                <button type="submit" class="btn btn-outline-danger btn-row"
+                                        th:title="${'Deactivate ' + m.name}" th:attr="aria-label=${'Deactivate ' + m.name}"><i class="bi bi-person-dash" aria-hidden="true"></i></button>
+                            </form>
+                            <form th:unless="${m.active}" th:action="@{/mechanics/{id}/activate(id=${m.id})}" method="post">
+                                <button type="submit" class="btn btn-outline-secondary btn-row"
+                                        th:title="${'Activate ' + m.name}" th:attr="aria-label=${'Activate ' + m.name}"><i class="bi bi-person-check" aria-hidden="true"></i></button>
+                            </form>
+                        </th:block>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${page.empty}"><div th:replace="~{fragments/components :: emptyState('bi-person-gear', 'No mechanics found', 'Adjust the search or add a mechanic.')}"></div></th:block>
+
+        <div class="panel-footer">
+            <p th:replace="~{fragments/components :: resultSummary(${page})}"></p>
+            <nav th:replace="~{fragments/components :: pagination(${page}, ${base})}"></nav>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

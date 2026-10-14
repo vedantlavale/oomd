@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<!--/* Centered layout for the login page and error pages (works without a signed-in user). */-->
+<html lang="en" th:fragment="authLayout(title, content)" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0b1f3a">
+    <title th:text="${title} + ' · VSMS'">VSMS</title>
+    <link rel="icon" type="image/svg+xml" th:href="@{/images/favicon.svg}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap/css/bootstrap.min.css}">
+    <link rel="stylesheet" th:href="@{/webjars/bootstrap-icons/font/bootstrap-icons.min.css}">
+    <link rel="stylesheet" th:href="@{/css/vsms.css}">
+</head>
+<body class="auth-body">
+<main class="auth-main" id="main-content">
+    <th:block th:replace="${content}">Content</th:block>
+</main>
+<script th:src="@{/webjars/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/js/vsms.js}"></script>
+</body>
+</html>

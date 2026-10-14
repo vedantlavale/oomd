@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Edit job details', active='jobs', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/jobs/' + ${job.id}, 'Back to job card')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Edit job details <small class="text-muted" th:text="${job.jobNumber}">JC-000001</small></h1>
+            <p class="page-subtitle" th:text="${job.vehicle.registrationNumber + ' · ' + job.customer.name}">Vehicle · Customer</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${jobEditForm}" th:action="@{/jobs/{id}(id=${job.id})}" method="post" class="panel-body" novalidate>
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+            <div class="row g-3">
+                <div class="col-12">
+                    <label for="customerComplaint" class="form-label required">Customer complaint</label>
+                    <textarea class="form-control" id="customerComplaint" th:field="*{customerComplaint}" th:errorclass="is-invalid"
+                              rows="4" required maxlength="1000"></textarea>
+                    <div class="invalid-feedback" th:errors="*{customerComplaint}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="laborCharge" class="form-label required">Labour charge</label>
+                    <div class="input-group">
+                        <span class="input-group-text" th:text="${@fmt.symbol()}">₹</span>
+                        <input type="number" class="form-control" id="laborCharge" th:field="*{laborCharge}" th:errorclass="is-invalid"
+                               required min="0" step="0.01" inputmode="decimal">
+                    </div>
+                    <div class="invalid-feedback" th:errors="*{laborCharge}">Error</div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Save changes</button>
+                <a class="btn btn-outline-secondary" th:href="@{/jobs/{id}(id=${job.id})}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title='Spare parts', active='parts', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Spare parts</h1>
+            <p class="page-subtitle">Inventory with the current unit price and stock on the shelf.</p>
+        </div>
+        <div class="page-actions" sec:authorize="hasAnyRole('ADMIN','SERVICE_ADVISOR')">
+            <a class="btn btn-primary" th:href="@{/parts/new}"><i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Add part</a>
+        </div>
+    </div>
+
+    <div class="alert alert-warning" role="status" th:if="${lowStockCount > 0 and !low}">
+        <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+        <div class="alert-text"><strong th:text="${lowStockCount}">3</strong> part(s) are at or below their low-stock level.
+            <a th:href="@{/parts(low=true)}">Show them</a></div>
+    </div>
+
+    <section class="panel" th:with="base=@{/parts(q=${q}, low=${low})}">
+        <form class="filter-bar" method="get" th:action="@{/parts}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search parts</label>
+                <div class="search-field">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}" placeholder="SKU or name" maxlength="100">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label for="low">Stock</label>
+                <select class="form-select" id="low" name="low">
+                    <option value="false" th:selected="${!low}">All parts</option>
+                    <option value="true" th:selected="${low}">Low stock only</option>
+                </select>
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a class="btn btn-outline-secondary" th:href="@{/parts}" th:if="${(q != null and !q.isBlank()) or low}">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">Spare parts inventory</caption>
+                <thead>
+                <tr>
+                    <th scope="col">SKU</th>
+                    <th scope="col">Part</th>
+                    <th scope="col" class="num">Unit price</th>
+                    <th scope="col" class="num">In stock</th>
+                    <th scope="col" class="num">Low at</th>
+                    <th scope="col" class="col-actions" sec:authorize="hasAnyRole('ADMIN','SERVICE_ADVISOR')">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="p : ${page.content}">
+                    <td class="cell-primary" th:text="${p.sku}">SKU-1</td>
+                    <td th:text="${p.name}">Part</td>
+                    <td class="num" th:text="${@fmt.money(p.unitPrice)}">₹100.00</td>
+                    <td class="num">
+                        <span th:classappend="${p.lowStock} ? 'low-stock'" th:text="${p.stockQuantity}">10</span>
+                        <span class="status-badge status-on-hold ms-1" th:if="${p.outOfStock}">Out of stock</span>
+                        <span class="status-badge status-in-progress ms-1" th:if="${p.lowStock and !p.outOfStock}">Low</span>
+                    </td>
+                    <td class="num" th:text="${p.reorderLevel}">5</td>
+                    <td class="col-actions" sec:authorize="hasAnyRole('ADMIN','SERVICE_ADVISOR')">
+                        <form th:action="@{/parts/{id}/stock(id=${p.id})}" method="post" class="inline-form d-inline-flex align-items-center gap-1">
+                            <label class="visually-hidden" th:for="${'qty-' + p.id}" th:text="${'Units to add to ' + p.name}">Units</label>
+                            <input type="number" class="form-control form-control-sm" style="width:5rem" th:id="${'qty-' + p.id}"
+                                   name="quantity" min="1" max="100000" value="10" required inputmode="numeric">
+                            <button type="submit" class="btn btn-outline-primary btn-row" th:title="${'Add stock to ' + p.name}">
+                                <i class="bi bi-plus-lg me-1" aria-hidden="true"></i>Stock</button>
+                        </form>
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/parts/{id}/edit(id=${p.id})}"
+                           th:title="${'Edit ' + p.name}" th:attr="aria-label=${'Edit ' + p.name}"><i class="bi bi-pencil" aria-hidden="true"></i></a>
+                        <form sec:authorize="hasRole('ADMIN')" th:action="@{/parts/{id}/delete(id=${p.id})}" method="post"
+                              th:attr="data-confirm=${'Delete part ' + p.name + '? Parts used on jobs cannot be deleted.'}"
+                              data-confirm-title="Delete part" data-confirm-label="Delete">
+                            <button type="submit" class="btn btn-outline-danger btn-row"
+                                    th:title="${'Delete ' + p.name}" th:attr="aria-label=${'Delete ' + p.name}"><i class="bi bi-trash" aria-hidden="true"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${page.empty}"><div th:replace="~{fragments/components :: emptyState('bi-boxes', 'No parts found', 'Adjust the search or add a part.')}"></div></th:block>
+
+        <div class="panel-footer">
+            <p th:replace="~{fragments/components :: resultSummary(${page})}"></p>
+            <nav th:replace="~{fragments/components :: pagination(${page}, ${base})}"></nav>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

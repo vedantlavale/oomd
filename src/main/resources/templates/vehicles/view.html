@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=${details.vehicle.registrationNumber}, active='vehicles', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="v=${details.vehicle}">
+    <a th:replace="~{fragments/components :: backLink('/vehicles', 'Back to vehicles')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${v.registrationNumber}">MH12AB1234</h1>
+            <p class="page-subtitle" th:text="${v.manufacturer + ' ' + v.model + ' · ' + v.manufacturingYear}">Maker Model</p>
+        </div>
+        <div class="page-actions">
+            <a class="btn btn-primary" th:href="@{/appointments/new(customerId=${v.customer.id}, vehicleId=${v.id})}"><i class="bi bi-calendar-plus me-1" aria-hidden="true"></i>Book appointment</a>
+            <a class="btn btn-outline-secondary" th:href="@{/vehicles/{id}/edit(id=${v.id})}"><i class="bi bi-pencil me-1" aria-hidden="true"></i>Edit</a>
+            <form sec:authorize="hasRole('ADMIN')" th:action="@{/vehicles/{id}/delete(id=${v.id})}" method="post"
+                  th:attr="data-confirm=${'Delete vehicle ' + v.registrationNumber + '? This cannot be undone.'}"
+                  data-confirm-title="Delete vehicle" data-confirm-label="Delete">
+                <button type="submit" class="btn btn-outline-danger"><i class="bi bi-trash me-1" aria-hidden="true"></i>Delete</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Vehicle details</h2></div>
+                <div class="panel-body">
+                    <dl class="detail-list" style="grid-template-columns: 7rem 1fr">
+                        <dt>Registration</dt><dd class="fw-600" th:text="${v.registrationNumber}">MH12AB1234</dd>
+                        <dt>Manufacturer</dt><dd th:text="${v.manufacturer}">Maker</dd>
+                        <dt>Model</dt><dd th:text="${v.model}">Model</dd>
+                        <dt>Year</dt><dd th:text="${v.manufacturingYear}">2020</dd>
+                        <dt>Fuel</dt><dd th:text="${v.fuelType.label}">Petrol</dd>
+                        <dt>Owner</dt><dd><a th:href="@{/customers/{id}(id=${v.customer.id})}" th:text="${v.customer.name}">Owner</a>
+                            <span class="cell-sub" th:text="${v.customer.phone}">9876543210</span></dd>
+                    </dl>
+                    <p class="form-text mt-3 mb-0" th:unless="${details.deletable}">
+                        This vehicle has <span th:text="${details.appointmentCount}">0</span> appointment(s), so it cannot be deleted.
+                    </p>
+                </div>
+            </section>
+        </div>
+
+        <div class="col-lg-8">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">Service history</h2></div>
+                <div class="table-responsive" th:unless="${#lists.isEmpty(details.jobs)}">
+                    <table class="table table-vsms">
+                        <caption class="visually-hidden">Service jobs for this vehicle</caption>
+                        <thead><tr><th scope="col">Job card</th><th scope="col">Service</th><th scope="col">Opened</th><th scope="col">Status</th></tr></thead>
+                        <tbody>
+                        <tr th:each="j : ${details.jobs}">
+                            <td class="cell-primary"><a th:href="@{/jobs/{id}(id=${j.id})}" th:text="${j.jobNumber}">JC-000001</a></td>
+                            <td th:text="${j.serviceItem.name}">Service</td>
+                            <td th:text="${#temporals.format(j.createdAt, 'dd MMM yyyy')}">01 Jan 2026</td>
+                            <td><span th:replace="~{fragments/components :: badge(${j.status})}"></span></td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <th:block th:if="${#lists.isEmpty(details.jobs)}"><div th:replace="~{fragments/components :: emptyState('bi-wrench-adjustable', 'No service history yet', 'Jobs created for this vehicle will appear here.')}"></div></th:block>
+            </section>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

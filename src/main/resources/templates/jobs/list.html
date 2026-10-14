@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:replace="~{fragments/layout :: layout(title=${currentUser.mechanic ? 'My jobs' : 'Service jobs'}, active='jobs', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <div class="page-header">
+        <div>
+            <h1 class="page-title" th:text="${currentUser.mechanic ? 'My jobs' : 'Service jobs'}">Service jobs</h1>
+            <p class="page-subtitle" th:text="${currentUser.mechanic ? 'Jobs assigned to you.' : 'Job cards for every vehicle in the workshop.'}">Job cards.</p>
+        </div>
+        <div class="page-actions" sec:authorize="hasAnyRole('ADMIN','SERVICE_ADVISOR')">
+            <a class="btn btn-primary" th:href="@{/appointments}"><i class="bi bi-clipboard-plus me-1" aria-hidden="true"></i>New job from an appointment</a>
+        </div>
+    </div>
+
+    <section class="panel"
+             th:with="base=@{/jobs(q=${q}, status=${status}, mechanicId=${mechanicId}, from=${from}, to=${to})}">
+        <form class="filter-bar" method="get" th:action="@{/jobs}" role="search">
+            <div class="filter-field grow">
+                <label for="q">Search</label>
+                <div class="search-field">
+                    <i class="bi bi-search" aria-hidden="true"></i>
+                    <input type="search" class="form-control" id="q" name="q" th:value="${q}"
+                           placeholder="Job number, customer or registration number" maxlength="100">
+                </div>
+            </div>
+            <div class="filter-field">
+                <label for="status">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All statuses</option>
+                    <option th:each="s : ${statuses}" th:value="${s}" th:text="${s.label}" th:selected="${s == status}">Created</option>
+                </select>
+            </div>
+            <div class="filter-field" th:unless="${currentUser.mechanic}">
+                <label for="mechanicId">Mechanic</label>
+                <select class="form-select" id="mechanicId" name="mechanicId">
+                    <option value="">Any mechanic</option>
+                    <option th:each="m : ${mechanics}" th:value="${m.id}" th:text="${m.name}" th:selected="${m.id == mechanicId}">Mechanic</option>
+                </select>
+            </div>
+            <div class="filter-field">
+                <label for="from">Created from</label>
+                <input type="date" class="form-control" id="from" name="from" th:value="${from}">
+            </div>
+            <div class="filter-field">
+                <label for="to">Created to</label>
+                <input type="date" class="form-control" id="to" name="to" th:value="${to}">
+            </div>
+            <div class="filter-actions">
+                <button type="submit" class="btn btn-primary">Apply</button>
+                <a class="btn btn-outline-secondary" th:href="@{/jobs}"
+                   th:if="${(q != null and !q.isBlank()) or status != null or mechanicId != null or from != null or to != null}">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-vsms">
+                <caption class="visually-hidden">Service jobs</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Job card</th>
+                    <th scope="col">Vehicle</th>
+                    <th scope="col">Service</th>
+                    <th scope="col">Mechanic</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Created</th>
+                    <th scope="col" class="col-actions">Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="j : ${page.content}">
+                    <td class="cell-primary"><a th:href="@{/jobs/{id}(id=${j.id})}" th:text="${j.jobNumber}">JC-000001</a></td>
+                    <td><span th:text="${j.vehicle.registrationNumber}">MH12AB1234</span>
+                        <span class="cell-sub" th:text="${j.customer.name}">Customer</span></td>
+                    <td th:text="${j.serviceItem.name}">Service</td>
+                    <td><span th:if="${j.mechanic}" th:text="${j.mechanic.name}">Mechanic</span>
+                        <span th:unless="${j.mechanic}" class="text-muted">Not assigned</span></td>
+                    <td><span th:replace="~{fragments/components :: badge(${j.status})}"></span></td>
+                    <td th:text="${#temporals.format(j.createdAt, 'dd MMM yyyy')}">01 Jan 2026</td>
+                    <td class="col-actions">
+                        <a class="btn btn-outline-secondary btn-row" th:href="@{/jobs/{id}(id=${j.id})}"
+                           th:title="${'Open job card ' + j.jobNumber}" th:attr="aria-label=${'Open job card ' + j.jobNumber}"><i class="bi bi-box-arrow-up-right" aria-hidden="true"></i></a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <th:block th:if="${page.empty}"><div th:replace="~{fragments/components :: emptyState('bi-wrench-adjustable', 'No jobs found', 'Adjust the filters, or create a job from a scheduled appointment.')}"></div></th:block>
+
+        <div class="panel-footer">
+            <p th:replace="~{fragments/components :: resultSummary(${page})}"></p>
+            <nav th:replace="~{fragments/components :: pagination(${page}, ${base})}"></nav>
+        </div>
+    </section>
+</th:block>
+</body>
+</html>

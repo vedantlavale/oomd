@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Generate invoice', active='invoices', content=~{::content})}">
+<body>
+<th:block th:fragment="content" th:with="job=${preview.job}, t=${preview.totals}">
+    <a th:replace="~{fragments/components :: backLink('/jobs/' + ${job.id}, 'Back to job card')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Generate invoice <small class="text-muted" th:text="${job.jobNumber}">JC-000001</small></h1>
+            <p class="page-subtitle" th:text="${job.customer.name + ' · ' + job.vehicle.registrationNumber + ' · ' + job.serviceItem.name}">Customer · Vehicle</p>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-7">
+            <section class="panel">
+                <div class="panel-header"><h2 class="panel-title">What will be billed</h2></div>
+                <div class="table-responsive">
+                    <table class="table table-vsms">
+                        <caption class="visually-hidden">Invoice lines</caption>
+                        <thead><tr><th scope="col">Item</th><th scope="col" class="num">Qty</th><th scope="col" class="num">Unit price</th><th scope="col" class="num">Amount</th></tr></thead>
+                        <tbody>
+                        <tr>
+                            <td class="cell-primary">Labour charge <span class="cell-sub" th:text="${job.serviceItem.name}">Service</span></td>
+                            <td class="num">1</td>
+                            <td class="num" th:text="${@fmt.money(job.laborCharge)}">₹0.00</td>
+                            <td class="num" th:text="${@fmt.money(job.laborCharge)}">₹0.00</td>
+                        </tr>
+                        <tr th:each="u : ${job.partUsages}" th:if="${u.stockDeducted}">
+                            <td><span class="cell-primary" th:text="${u.sparePart.name}">Part</span><span class="cell-sub" th:text="${u.sparePart.sku}">SKU</span></td>
+                            <td class="num" th:text="${u.quantity}">1</td>
+                            <td class="num" th:text="${@fmt.money(u.unitPriceAtUse)}">₹0.00</td>
+                            <td class="num" th:text="${@fmt.money(u.lineTotal)}">₹0.00</td>
+                        </tr>
+                        </tbody>
+                        <tfoot>
+                        <tr><td colspan="3">Subtotal (labour + parts)</td><td class="num" th:text="${@fmt.money(t.subtotal)}">₹0.00</td></tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </section>
+        </div>
+        <div class="col-lg-5">
+            <section class="panel">
+                <form th:object="${invoiceForm}" th:action="@{/invoices}" method="post" class="panel-body" novalidate>
+                    <div th:replace="~{fragments/components :: formErrors}"></div>
+                    <input type="hidden" th:field="*{jobId}">
+                    <label for="taxPercent" class="form-label required">Tax rate (%)</label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" id="taxPercent" th:field="*{taxPercent}" th:errorclass="is-invalid"
+                               required min="0" max="100" step="0.01" inputmode="decimal" aria-describedby="taxHelp">
+                        <span class="input-group-text">%</span>
+                    </div>
+                    <div class="invalid-feedback" th:errors="*{taxPercent}">Error</div>
+                    <div class="form-text" id="taxHelp">Enter 0 for no tax. The default is
+                        <strong th:text="${preview.defaultTaxPercent + '%'}">18%</strong>. The tax and the grand total are
+                        calculated on the server when you generate the invoice.</div>
+
+                    <div class="mt-3 p-3 bg-body-tertiary rounded">
+                        <p class="mb-1 text-muted small">Estimate at the default rate</p>
+                        <div class="d-flex justify-content-between"><span>Subtotal</span><span class="num" th:text="${@fmt.money(t.subtotal)}">₹0.00</span></div>
+                        <div class="d-flex justify-content-between"><span th:text="${'Tax (' + t.taxPercent + '%)'}">Tax</span><span class="num" th:text="${@fmt.money(t.taxAmount)}">₹0.00</span></div>
+                        <div class="d-flex justify-content-between fw-bold border-top mt-2 pt-2"><span>Grand total</span><span class="num" th:text="${@fmt.money(t.grandTotal)}">₹0.00</span></div>
+                    </div>
+
+                    <p class="form-text mt-3 mb-0">Generating the invoice marks the job as <strong>Invoiced</strong>. Parts and charges can no longer be changed afterwards.</p>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-receipt me-1" aria-hidden="true"></i>Generate invoice</button>
+                        <a class="btn btn-outline-secondary" th:href="@{/jobs/{id}(id=${job.id})}">Cancel</a>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </div>
+</th:block>
+</body>
+</html>

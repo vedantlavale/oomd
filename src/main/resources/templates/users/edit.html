@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Edit user', active='users', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/users', 'Back to users')}"></a>
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Edit user <small class="text-muted" th:text="${user.username}">admin</small></h1>
+            <p class="page-subtitle">The username cannot be changed. Disable an account instead of deleting it.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:object="${userEditForm}" th:action="@{/users/{id}(id=${user.id})}" method="post" class="panel-body" novalidate>
+            <div th:replace="~{fragments/components :: formErrors}"></div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="fullName" class="form-label required">Full name</label>
+                    <input type="text" class="form-control" id="fullName" th:field="*{fullName}" th:errorclass="is-invalid" required maxlength="100" autocomplete="off">
+                    <div class="invalid-feedback" th:errors="*{fullName}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="role" class="form-label required">Role</label>
+                    <select class="form-select" id="role" th:field="*{role}" th:errorclass="is-invalid" required>
+                        <option th:each="r : ${roles}" th:value="${r}" th:text="${r.label}">Administrator</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{role}">Error</div>
+                </div>
+                <div class="col-md-6">
+                    <label for="mechanicId" class="form-label">Linked mechanic (mechanic role only)</label>
+                    <select class="form-select" id="mechanicId" th:field="*{mechanicId}" th:errorclass="is-invalid">
+                        <option value="">None</option>
+                        <option th:each="m : ${mechanics}" th:value="${m.id}" th:text="${m.displayName + (m.active ? '' : ' - inactive')}">Mechanic</option>
+                    </select>
+                    <div class="invalid-feedback" th:errors="*{mechanicId}">Error</div>
+                </div>
+                <div class="col-12">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="enabled" th:field="*{enabled}">
+                        <label class="form-check-label" for="enabled">Account enabled (can sign in)</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check2-circle me-1" aria-hidden="true"></i>Save changes</button>
+                <a class="btn btn-outline-secondary" th:href="@{/users}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>

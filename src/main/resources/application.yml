@@ -1,0 +1,62 @@
+# Vehicle Service Management System - main configuration.
+# Every secret or environment-specific value comes from an environment variable.
+# See README.md for the full list and for PowerShell examples.
+
+spring:
+  application:
+    name: vsms
+  datasource:
+    url: ${VSMS_DB_URL:jdbc:mysql://localhost:3306/vsms_db?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8}
+    username: ${VSMS_DB_USERNAME:vsms_user}
+    password: ${VSMS_DB_PASSWORD:}
+    hikari:
+      # Every statement sees the latest committed data. Together with the row locks in the services this
+      # guarantees that two people cannot, for example, take the same stock or pay the same balance twice.
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+  jpa:
+    hibernate:
+      # update  = create/extend tables automatically (easiest for a first run)
+      # validate = only check that the tables match (use with database/schema.sql)
+      ddl-auto: ${VSMS_DDL_AUTO:update}
+    # Kept on so Thymeleaf pages can follow lazy relationships while rendering.
+    open-in-view: true
+  thymeleaf:
+    cache: ${VSMS_TEMPLATE_CACHE:true}
+
+server:
+  port: ${VSMS_PORT:8080}
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+  error:
+    include-message: never
+    include-stacktrace: never
+
+vsms:
+  admin:
+    # Initial administrator (created on first start when no admin exists).
+    username: ${VSMS_ADMIN_USERNAME:admin}
+    # If empty, a random password is generated and printed once in the console.
+    password: ${VSMS_ADMIN_PASSWORD:}
+    # Set to true (together with VSMS_ADMIN_PASSWORD) to reset a forgotten admin password.
+    reset-on-startup: ${VSMS_ADMIN_RESET:false}
+  sample-data:
+    # Loads fictional demo data once, only when the database has no customers yet.
+    enabled: ${VSMS_LOAD_SAMPLE_DATA:true}
+  billing:
+    default-tax-percent: ${VSMS_DEFAULT_TAX_PERCENT:18.00}
+    currency-symbol: "₹"
+  business:
+    name: Apex Auto Care Service Center
+    address: 24 Workshop Road, Industrial Estate, Sample City - 400001
+    phone: "+91 22 5550 0100"
+    email: service@apexautocare.example
+    tax-number: ""
+  appointments:
+    opening-time: "09:00"
+    closing-time: "18:00"
+    slot-minutes: 30
+    max-days-ahead: 180

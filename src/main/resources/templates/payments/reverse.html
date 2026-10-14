@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{fragments/layout :: layout(title='Reverse payment', active='payments', content=~{::content})}">
+<body>
+<th:block th:fragment="content">
+    <a th:replace="~{fragments/components :: backLink('/invoices/' + ${payment.invoice.id}, 'Back to invoice')}"></a>
+
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Reverse payment <small class="text-muted" th:text="${payment.receiptNumber}">PAY-000001</small></h1>
+            <p class="page-subtitle">Use this only for a payment that was entered by mistake.</p>
+        </div>
+    </div>
+
+    <section class="panel form-narrow">
+        <form th:action="@{/payments/{id}/reverse(id=${payment.id})}" method="post" class="panel-body" novalidate>
+            <div class="alert alert-danger" role="alert" th:if="${error}">
+                <i class="bi bi-exclamation-octagon-fill" aria-hidden="true"></i>
+                <div class="alert-text" th:text="${error}">Error</div>
+            </div>
+            <div class="alert alert-warning" role="status">
+                <i class="bi bi-exclamation-triangle-fill" aria-hidden="true"></i>
+                <div class="alert-text">The payment of <strong th:text="${@fmt.money(payment.amount)}">₹0.00</strong>
+                    (<span th:text="${payment.method.label}">Cash</span>) stops counting as revenue and the invoice
+                    <strong th:text="${payment.invoice.invoiceNumber}">INV-000001</strong> becomes less paid. The record itself is kept for audit.</div>
+            </div>
+            <label for="reason" class="form-label required">Reason</label>
+            <textarea class="form-control" id="reason" name="reason" rows="3" maxlength="200" required
+                      placeholder="e.g. Entered twice by mistake" th:text="${reason}"></textarea>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-danger"><i class="bi bi-arrow-counterclockwise me-1" aria-hidden="true"></i>Reverse payment</button>
+                <a class="btn btn-outline-secondary" th:href="@{/invoices/{id}(id=${payment.invoice.id})}">Cancel</a>
+            </div>
+        </form>
+    </section>
+</th:block>
+</body>
+</html>
